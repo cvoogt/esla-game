@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lifetimeStats, standings, type Game, type ScoreEvent } from './scoring'
+import { lifetimeStats, results, standings, type Game, type ScoreEvent } from './scoring'
 
 let n = 0
 function ev(playerId: string, points: number, extra: Partial<ScoreEvent> = {}): ScoreEvent {
@@ -53,9 +53,16 @@ describe('standings', () => {
 })
 
 describe('lifetimeStats', () => {
-  it('only counts ended games and merges by name', () => {
-    const stats = lifetimeStats([game([ev('a', 5)], 1), game([ev('a', 2), ev('b', 9)], 2), game([ev('a', 100)])])
+  it('sums across games and groups guests by name', () => {
+    const stats = lifetimeStats([results(game([ev('a', 5)])), results(game([ev('a', 2), ev('b', 9)]))])
     const ann = stats.find((s) => s.name === 'Ann')!
     expect(ann).toMatchObject({ games: 2, wins: 1, points: 7, best: 5 })
+  })
+
+  it('groups accounts by uid and uses their current name', () => {
+    const g1 = results(game([ev('a', 3)])).map((r) => (r.playerId === 'a' ? { ...r, uid: 'u1', name: 'Old' } : r))
+    const g2 = results(game([ev('a', 1)])).map((r) => (r.playerId === 'a' ? { ...r, uid: 'u1', name: 'Ann' } : r))
+    const stats = lifetimeStats([g1, g2], { u1: 'Annie' })
+    expect(stats.filter((s) => s.uid === 'u1')).toEqual([expect.objectContaining({ name: 'Annie', games: 2, points: 4 })])
   })
 })

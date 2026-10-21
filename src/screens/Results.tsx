@@ -1,5 +1,5 @@
 import { standings, type Game } from '../scoring'
-import { actions } from '../store'
+import { deleteGame } from '../data'
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
@@ -44,8 +44,8 @@ export function Results({ game, onHome, onEdit }: { game: Game; onHome: () => vo
         <button
           className="big danger"
           onClick={() => {
-            if (confirm('Delete this game permanently?')) {
-              actions.deleteGame(game.id)
+            if (confirm('Delete this game for everyone? It will also be removed from the leaderboard.')) {
+              deleteGame(game)
               onHome()
             }
           }}

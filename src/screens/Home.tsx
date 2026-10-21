@@ -1,14 +1,35 @@
-import { lifetimeStats, standings } from '../scoring'
-import { useStore } from '../store'
+import { signOut, type GameDoc, type Profile } from '../data'
+import { lifetimeStats } from '../scoring'
 
-export function Home({ onNew, onOpen, onResults }: { onNew: () => void; onOpen: (id: string) => void; onResults: (id: string) => void }) {
-  const { games } = useStore()
-  const live = games.find((g) => !g.endedAt)
-  const finished = games.filter((g) => g.endedAt)
-  const stats = lifetimeStats(games)
+interface Props {
+  me: Profile
+  users: Profile[]
+  myGames: GameDoc[]
+  finished: GameDoc[]
+  onNew: () => void
+  onOpen: (id: string) => void
+  onResults: (id: string) => void
+}
+
+export function Home({ me, users, myGames, finished, onNew, onOpen, onResults }: Props) {
+  const live = myGames.find((g) => g.status === 'live')
+  const past = myGames.filter((g) => g.status === 'ended')
+  const names = Object.fromEntries(users.map((u) => [u.uid, u.name]))
+  const stats = lifetimeStats(finished.flatMap((g) => (g.results ? [g.results] : [])), names)
 
   return (
     <div className="screen">
+      <header className="bar">
+        <span className="muted">Hi, {me.name}</span>
+        <span />
+        <button
+          className="link"
+          onClick={() => confirm('Sign out of Esla on this phone?') && signOut()}
+        >
+          Sign out
+        </button>
+      </header>
+
       <div className="hero">
         <h1>Esla</h1>
         <p className="muted">Spot it. Call it. Score it.</p>
@@ -44,8 +65,11 @@ export function Home({ onNew, onOpen, onResults }: { onNew: () => void; onOpen: 
             </thead>
             <tbody>
               {stats.map((s) => (
-                <tr key={s.name}>
-                  <td>{s.name}</td>
+                <tr key={s.key} className={s.uid === me.uid ? 'me' : ''}>
+                  <td>
+                    {s.name}
+                    {!s.uid && <span className="muted small"> guest</span>}
+                  </td>
                   <td>{s.wins}</td>
                   <td>{s.games}</td>
                   <td>{s.points}</td>
@@ -60,20 +84,19 @@ export function Home({ onNew, onOpen, onResults }: { onNew: () => void; onOpen: 
         </section>
       )}
 
-      {finished.length > 0 && (
+      {past.length > 0 && (
         <section>
-          <h3>Past games</h3>
+          <h3>My past games</h3>
           <ul className="list">
-            {finished.map((g) => {
-              const top = standings(g).filter((r) => r.rank === 1)
+            {past.map((g) => {
+              const top = (g.results ?? []).filter((r) => r.rank === 1)
               return (
                 <li key={g.id} onClick={() => onResults(g.id)} className="tap">
                   <span className="grow">
-                    {new Date(g.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} ·{' '}
-                    {g.players.length} players
+                    {new Date(g.startedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · {g.players.length} players
                   </span>
                   <span>
-                    🏆 {top.map((r) => r.player.name).join(' & ')} ({top[0]?.score ?? 0})
+                    🏆 {top.map((r) => r.name).join(' & ') || '—'} {top[0] && `(${top[0].score})`}
                   </span>
                 </li>
               )
@@ -81,8 +104,6 @@ export function Home({ onNew, onOpen, onResults }: { onNew: () => void; onOpen: 
           </ul>
         </section>
       )}
-
-      <p className="muted center small">Saved on this phone. Accounts and shared games are coming next.</p>
     </div>
   )
 }

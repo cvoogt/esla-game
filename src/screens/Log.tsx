@@ -1,5 +1,5 @@
 import type { Game } from '../scoring'
-import { actions } from '../store'
+import { removeEvents } from '../data'
 
 const time = (t: number) => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
@@ -31,7 +31,7 @@ export function Log({ game, onBack }: { game: Game; onBack: () => void }) {
             <button
               className="link danger"
               aria-label="Delete"
-              onClick={() => confirm(`Delete "${e.label}" for ${name(e.playerId)}?`) && actions.removeEvent(game.id, e.id)}
+              onClick={() => confirm(`Delete "${e.label}" for ${name(e.playerId)}?`) && removeEvents(game.id, [e.id])}
             >
               ✕
             </button>

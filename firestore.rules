@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Any signed-in friend can see games and the leaderboard.
+// Only a game's members (its creator and its players with accounts) can change it.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40;
+    }
+
+    match /games/{gameId} {
+      function isMember() {
+        return request.auth.uid in resource.data.memberUids;
+      }
+
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.auth.uid in request.resource.data.memberUids;
+      allow update: if signedIn() && isMember()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && resource.data.createdBy in request.resource.data.memberUids;
+      allow delete: if signedIn() && isMember();
+
+      match /events/{eventId} {
+        function isGameMember() {
+          return request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.memberUids;
+        }
+
+        allow read: if signedIn();
+        allow create: if signedIn() && isGameMember()
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.points is int;
+        allow delete: if signedIn() && isGameMember();
+      }
+    }
+  }
+}

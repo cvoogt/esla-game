@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { actions, useStore } from '../store'
+import { PlayerPicker } from '../components/PlayerPicker'
+import { newId, type Profile } from '../data'
+import type { Player } from '../scoring'
 
-export function Setup({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
-  const { names: known } = useStore()
-  const [names, setNames] = useState<string[]>([])
-  const [draft, setDraft] = useState('')
+interface Props {
+  me: Profile
+  users: Profile[]
+  onBack: () => void
+  onStart: (players: Player[]) => void
+}
 
-  const has = (n: string) => names.some((x) => x.toLowerCase() === n.toLowerCase())
-  function add(name: string) {
-    const n = name.trim()
-    if (n && !has(n)) setNames([...names, n])
-    setDraft('')
-  }
+export function Setup({ me, users, onBack, onStart }: Props) {
+  const [players, setPlayers] = useState<Player[]>([{ id: newId(), name: me.name, uid: me.uid }])
 
   return (
     <div className="screen">
@@ -23,59 +23,25 @@ export function Setup({ onBack, onStart }: { onBack: () => void; onStart: () => 
         <span />
       </header>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault()
-          add(draft)
-        }}
-      >
-        <input
-          className="grow"
-          placeholder="Player name"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          autoFocus
-        />
-        <button className="big primary narrow" type="submit" disabled={!draft.trim()}>
-          Add
-        </button>
-      </form>
-
-      {known.filter((n) => !has(n)).length > 0 && (
-        <div className="chips">
-          {known
-            .filter((n) => !has(n))
-            .map((n) => (
-              <button key={n} className="chip" onClick={() => add(n)}>
-                + {n}
-              </button>
-            ))}
-        </div>
-      )}
-
       <ul className="list">
-        {names.map((n, i) => (
-          <li key={n}>
-            <span>
-              {i + 1}. {n}
+        {players.map((p, i) => (
+          <li key={p.id}>
+            <span className="grow">
+              {i + 1}. {p.name} {!p.uid && <span className="muted small">guest</span>}
             </span>
-            <button className="link danger" onClick={() => setNames(names.filter((x) => x !== n))}>
+            <button className="link danger" onClick={() => setPlayers(players.filter((x) => x.id !== p.id))}>
               Remove
             </button>
           </li>
         ))}
       </ul>
 
+      <h3>Add players</h3>
+      <PlayerPicker users={users} taken={players} onPick={(p) => setPlayers([...players, p])} />
+      <p className="muted small">Friends with accounts can score from their own phones.</p>
+
       <div className="footer">
-        <button
-          className="big primary"
-          disabled={names.length === 0}
-          onClick={() => {
-            actions.startGame(names)
-            onStart()
-          }}
-        >
+        <button className="big primary" disabled={players.length === 0} onClick={() => onStart(players)}>
           Start Game
         </button>
       </div>

@@ -170,6 +170,10 @@ h3 {
   color: var(--gold);
 }
 
+.screen > .big {
+  flex: none;
+}
+
 .big.narrow {
   flex: 0 0 auto;
 }
@@ -182,6 +186,10 @@ h3 {
 
 .footer > .big {
   box-shadow: 0 8px 24px #0008;
+}
+
+.footer:not(.row) > .big {
+  width: 100%;
 }
 
 .banner {
@@ -563,4 +571,15 @@ h3 {
   from {
     opacity: 0;
   }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table tbody tr.me td:first-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

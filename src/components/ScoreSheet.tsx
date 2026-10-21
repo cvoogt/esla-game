@@ -1,21 +1,20 @@
 import { useState } from 'react'
 import { CARS, DEALERSHIP_POINTS, GAS_STATION_MULTIPLIER, SWATCH, TRUCKS, type Sighting, type Vehicle } from '../rules'
-import type { Game, ScoreEvent } from '../scoring'
-import { actions, useStore } from '../store'
-
-type NewEvent = Omit<ScoreEvent, 'id' | 'at'>
+import { newId, type CustomSighting, type NewEvent } from '../data'
+import type { Game } from '../scoring'
 
 interface Props {
   game: Game
   playerId: string
+  customs: CustomSighting[]
+  onCustoms: (customs: CustomSighting[]) => void
   onScore: (events: NewEvent[]) => void
   onClose: () => void
 }
 
 type Panel = 'main' | 'custom' | 'adjust'
 
-export function ScoreSheet({ game, playerId, onScore, onClose }: Props) {
-  const { customs } = useStore()
+export function ScoreSheet({ game, playerId, customs, onCustoms, onScore, onClose }: Props) {
   const [selected, setSelected] = useState<string[]>([playerId])
   const [missed, setMissed] = useState(false)
   const [vehicle, setVehicle] = useState<Vehicle>('car')
@@ -70,7 +69,8 @@ export function ScoreSheet({ game, playerId, onScore, onClose }: Props) {
     const label = customLabel.trim() || 'Custom'
     const points = Math.abs(parseInt(customPoints, 10))
     if (!points) return
-    if (customLabel.trim()) actions.saveCustom(label, points)
+    if (customLabel.trim())
+      onCustoms([{ id: newId(), label, points }, ...customs.filter((c) => c.label.toLowerCase() !== label.toLowerCase())])
     scoreCustom(label, points)
   }
 
@@ -172,7 +172,7 @@ export function ScoreSheet({ game, playerId, onScore, onClose }: Props) {
                       className="remove"
                       onClick={(e) => {
                         e.stopPropagation()
-                        actions.removeCustom(c.id)
+                        onCustoms(customs.filter((x) => x.id !== c.id))
                       }}
                     >
                       ×

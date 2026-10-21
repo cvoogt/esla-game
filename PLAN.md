@@ -72,14 +72,14 @@ A player ends the game when they choose (usually when you reach your destination
     entered in a dead zone sync once signal returns.
   - Chosen over Supabase because Supabase's free tier pauses projects after about 7 days of
     inactivity, which would bite between road trips.
-- **Hosting:** Firebase Hosting (free, HTTPS, which iPhone home-screen apps need).
+- **Hosting:** GitHub Pages, deployed automatically on every push to `main` (free, HTTPS, which
+  iPhone home-screen apps need).
 
 ### Data model (draft)
-- `users/{uid}`: display name, lifetime stats
-- `games/{gameId}`: join code, status, players, created/ended times
+- `users/{uid}`: display name, saved custom sightings
+- `games/{gameId}`: status, players, member uids, created/ended times, final results summary
 - `games/{gameId}/events/{eventId}`: player, type, color, multiplier, points, created by, time
   (scores are always computed from events, so Undo just deletes an event)
-- `users/{uid}/customs`: saved custom sightings
 
 ## iPhone notes
 - **Vibration:** iPhone Safari doesn't support the web vibration API. There's a workaround that
@@ -101,5 +101,7 @@ A player ends the game when they choose (usually when you reach your destination
 - [x] Step 1: local game on one phone (setup, scoring, ×2, missed, dealership, custom, adjust,
   log/undo, end game, tiebreakers, history, local leaderboard, sound + haptic tap)
 - [x] Step 2: PWA install + offline
-- [ ] Step 3: Firebase accounts + shared live games + join code
-- [ ] Step 4: lifetime stats in the cloud (friends leaderboard)
+- [x] Step 3: Firebase accounts + shared live games (players with accounts are added from a
+  friends list instead of a join code, so their phones open the game automatically)
+- [x] Step 4: lifetime stats in the cloud (friends leaderboard of everyone with an account)
+- [ ] Live on GitHub Pages: https://cvoogt.github.io/esla-game/

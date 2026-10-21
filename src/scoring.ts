@@ -3,6 +3,8 @@ import type { ColorKey, Vehicle } from './rules'
 export interface Player {
   id: string
   name: string
+  /** Set when the player has an account; guests have none. */
+  uid?: string
 }
 
 /**
@@ -27,6 +29,7 @@ export interface ScoreEvent {
   multiplier: number
   points: number
   at: number
+  by?: string
 }
 
 export interface Game {
@@ -35,6 +38,7 @@ export interface Game {
   events: ScoreEvent[]
   startedAt: number
   endedAt?: number
+  createdBy?: string
 }
 
 export interface Standing {
@@ -77,7 +81,32 @@ function compare(a: Standing, b: Standing) {
   )
 }
 
+/** Per-player summary saved on a finished game; the leaderboard reads only these. */
+export interface Result {
+  playerId: string
+  uid: string | null
+  name: string
+  score: number
+  whiteCars: number
+  whiteTrucks: number
+  rank: number
+}
+
+export function results(game: Game): Result[] {
+  return standings(game).map((s) => ({
+    playerId: s.player.id,
+    uid: s.player.uid ?? null,
+    name: s.player.name,
+    score: s.score,
+    whiteCars: s.whiteCars,
+    whiteTrucks: s.whiteTrucks,
+    rank: s.rank,
+  }))
+}
+
 export interface LifetimeStats {
+  key: string
+  uid: string | null
   name: string
   games: number
   wins: number
@@ -87,13 +116,16 @@ export interface LifetimeStats {
   best: number
 }
 
-export function lifetimeStats(games: Game[]): LifetimeStats[] {
-  const byName = new Map<string, LifetimeStats>()
-  for (const game of games.filter((g) => g.endedAt)) {
-    for (const s of standings(game)) {
-      const key = s.player.name.trim().toLowerCase()
-      const st = byName.get(key) ?? {
-        name: s.player.name.trim(),
+/** Accounts are grouped by uid; guests by name. */
+export function lifetimeStats(games: Result[][], names: Record<string, string> = {}): LifetimeStats[] {
+  const byKey = new Map<string, LifetimeStats>()
+  for (const game of games) {
+    for (const r of game) {
+      const key = r.uid ?? 'guest:' + r.name.trim().toLowerCase()
+      const st = byKey.get(key) ?? {
+        key,
+        uid: r.uid,
+        name: (r.uid && names[r.uid]) || r.name.trim(),
         games: 0,
         wins: 0,
         points: 0,
@@ -102,13 +134,13 @@ export function lifetimeStats(games: Game[]): LifetimeStats[] {
         best: -Infinity,
       }
       st.games++
-      if (s.rank === 1) st.wins++
-      st.points += s.score
-      st.whiteCars += s.whiteCars
-      st.whiteTrucks += s.whiteTrucks
-      st.best = Math.max(st.best, s.score)
-      byName.set(key, st)
+      if (r.rank === 1) st.wins++
+      st.points += r.score
+      st.whiteCars += r.whiteCars
+      st.whiteTrucks += r.whiteTrucks
+      st.best = Math.max(st.best, r.score)
+      byKey.set(key, st)
     }
   }
-  return [...byName.values()].sort((a, b) => b.wins - a.wins || b.points - a.points)
+  return [...byKey.values()].sort((a, b) => b.wins - a.wins || b.points - a.points)
 }
