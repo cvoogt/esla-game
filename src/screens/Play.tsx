@@ -15,13 +15,13 @@ interface Toast {
 interface Props {
   game: Game
   me: Profile
-  users: Profile[]
+  friends: Profile[]
   onHome: () => void
   onLog: () => void
   onEnd: () => void
 }
 
-export function Play({ game, me, users, onHome, onLog, onEnd }: Props) {
+export function Play({ game, me, friends, onHome, onLog, onEnd }: Props) {
   const { sound } = usePrefs()
   const [active, setActive] = useState<string>()
   const [adding, setAdding] = useState(false)
@@ -164,7 +164,8 @@ export function Play({ game, me, users, onHome, onLog, onEnd }: Props) {
             <div className="sheet-handle" />
             <h3>Add player</h3>
             <PlayerPicker
-              users={users}
+              me={me}
+              friends={friends}
               taken={game.players}
               onPick={(p) => {
                 addPlayer(game.id, p)

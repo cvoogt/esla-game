@@ -1,27 +1,57 @@
 rules_version = '2';
 
-// Any signed-in friend can see games and the leaderboard.
-// Only a game's members (its creator and its players with accounts) can change it.
+// You can see yourself, your friends, and games you're in. Nothing else.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
+    function friends(a, b) {
+      return exists(/databases/$(database)/documents/friendships/$(a + '_' + b))
+        || exists(/databases/$(database)/documents/friendships/$(b + '_' + a));
+    }
+
     match /users/{uid} {
-      allow read: if signedIn();
+      allow get: if signedIn() && (request.auth.uid == uid || friends(request.auth.uid, uid));
       allow create, update: if signedIn() && request.auth.uid == uid
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40;
     }
 
+    // A code can be looked up by someone who knows it, but never listed,
+    // and it belongs to whoever claimed it first.
+    match /friendCodes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && code.matches('^[A-Z0-9]{6}$');
+    }
+
+    // Created by one side, using the other side's friend code. Either side can remove it.
+    match /friendships/{id} {
+      function members() {
+        return request.resource.data.members;
+      }
+
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      allow create: if signedIn()
+        && members().size() == 2
+        && members()[0] < members()[1]
+        && id == members()[0] + '_' + members()[1]
+        && request.auth.uid in members()
+        && get(/databases/$(database)/documents/friendCodes/$(request.resource.data.code)).data.uid in members()
+        && get(/databases/$(database)/documents/friendCodes/$(request.resource.data.code)).data.uid != request.auth.uid;
+      allow delete: if signedIn() && request.auth.uid in resource.data.members;
+    }
+
+    // Only a game's members (its creator and players with accounts) can see or change it.
     match /games/{gameId} {
       function isMember() {
         return request.auth.uid in resource.data.memberUids;
       }
 
-      allow read: if signedIn();
+      allow read: if signedIn() && isMember();
       allow create: if signedIn()
         && request.resource.data.createdBy == request.auth.uid
         && request.auth.uid in request.resource.data.memberUids;
@@ -35,7 +65,7 @@ service cloud.firestore {
           return request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.memberUids;
         }
 
-        allow read: if signedIn();
+        allow read: if signedIn() && isGameMember();
         allow create: if signedIn() && isGameMember()
           && request.resource.data.by == request.auth.uid
           && request.resource.data.points is int;

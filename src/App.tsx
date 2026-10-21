@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { createGame, useAuth, useFinishedGames, useGame, useMyGames, useProfile, useUsers, type Profile } from './data'
-import { Home } from './screens/Home'
+import {
+  createGame,
+  ensureFriendCode,
+  saveStats,
+  useAuth,
+  useFriends,
+  useGame,
+  useMyGames,
+  useProfile,
+  type GameDoc,
+  type Profile,
+  type Stats,
+} from './data'
+import { lifetimeStats, type LifetimeStats } from './scoring'
+import { Friends } from './screens/Friends'
+import { Home, type BoardRow } from './screens/Home'
 import { Log } from './screens/Log'
 import { Play } from './screens/Play'
 import { Results } from './screens/Results'
@@ -24,13 +38,33 @@ function Splash() {
   )
 }
 
-type View = 'home' | 'setup' | 'play' | 'log' | 'results'
+type View = 'home' | 'setup' | 'play' | 'log' | 'results' | 'friends'
+
+const EMPTY: Stats = { games: 0, wins: 0, points: 0, whiteCars: 0, whiteTrucks: 0, best: null }
+
+function toStats(s: LifetimeStats | undefined): Stats {
+  if (!s) return EMPTY
+  const { games, wins, points, whiteCars, whiteTrucks, best } = s
+  return { games, wins, points, whiteCars, whiteTrucks, best }
+}
+
+/** Me (from my own games), my saved guests, and my friends (from their saved stats). */
+function leaderboard(me: Profile, friends: Profile[], myGames: GameDoc[]): { mine: Stats; board: BoardRow[] } {
+  const all = lifetimeStats(myGames.flatMap((g) => (g.status === 'ended' && g.results ? [g.results] : [])))
+  const mine = toStats(all.find((s) => s.key === me.uid))
+  const board: BoardRow[] = [
+    { key: me.uid, name: me.name, kind: 'me', ...mine },
+    ...friends.map((f) => ({ key: f.uid, name: f.name, kind: 'friend' as const, ...(f.stats ?? EMPTY) })),
+    ...me.guests.map((g) => ({ key: 'guest:' + g.id, name: g.name, kind: 'guest' as const, ...toStats(all.find((s) => s.key === 'guest:' + g.id)) })),
+  ]
+  board.sort((a, b) => b.wins - a.wins || b.points - a.points || b.games - a.games)
+  return { mine, board }
+}
 
 function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) {
   const profile = useProfile(uid)
-  const users = useUsers()
+  const friends = useFriends(uid)
   const myGames = useMyGames(uid)
-  const finished = useFinishedGames()
   const [view, setView] = useState<View>('home')
   const [gameId, setGameId] = useState<string>()
   const game = useGame(gameId)
@@ -46,9 +80,21 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
     }
   }, [live, view])
 
+  // Accounts made before friend codes existed get one now.
+  const needsCode = profile && !profile.friendCode
+  useEffect(() => {
+    if (needsCode) ensureFriendCode(uid).catch(console.error)
+  }, [needsCode, uid])
+
   // The profile doc can lag right after sign-up.
-  const me: Profile = profile ?? { uid, name: fallbackName, customs: [] }
-  const others = users.filter((u) => u.uid !== uid)
+  const me: Profile = profile ?? { uid, name: fallbackName, customs: [], guests: [] }
+  const { mine, board } = leaderboard(me, friends, myGames ?? [])
+
+  // Publish my lifetime stats so friends' leaderboards can show them.
+  const minesJson = JSON.stringify(mine)
+  useEffect(() => {
+    if (profile && myGames && minesJson !== JSON.stringify(profile.stats ?? EMPTY)) saveStats(uid, JSON.parse(minesJson))
+  }, [minesJson, profile, myGames, uid])
 
   function go(v: View, id?: string) {
     navigated.current = true
@@ -59,15 +105,15 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
 
   if (!myGames) return <Splash />
 
+  if (view === 'friends') return <Friends me={me} friends={friends} onBack={() => go('home')} />
+
   if (view === 'setup')
     return (
       <Setup
         me={me}
-        users={others}
+        friends={friends}
         onBack={() => go('home')}
-        onStart={(players) =>
-          go('play', createGame(uid, players, myGames.filter((g) => g.status === 'live')))
-        }
+        onStart={(players) => go('play', createGame(uid, players, myGames.filter((g) => g.status === 'live')))}
       />
     )
 
@@ -75,9 +121,9 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
     return (
       <Home
         me={me}
-        users={users}
+        board={board}
         myGames={myGames}
-        finished={finished}
+        onFriends={() => go('friends')}
         onNew={() => go('setup')}
         onOpen={(id) => go('play', id)}
         onResults={(id) => go('results', id)}
@@ -87,14 +133,5 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
   if (!game) return <Splash />
   if (view === 'log') return <Log game={game} onBack={() => go('play')} />
   if (view === 'results') return <Results game={game} onHome={() => go('home')} onEdit={() => go('play')} />
-  return (
-    <Play
-      game={game}
-      me={me}
-      users={others}
-      onHome={() => go('home')}
-      onLog={() => go('log')}
-      onEnd={() => go('results')}
-    />
-  )
+  return <Play game={game} me={me} friends={friends} onHome={() => go('home')} onLog={() => go('log')} onEnd={() => go('results')} />
 }

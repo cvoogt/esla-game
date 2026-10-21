@@ -1,27 +1,32 @@
-import { signOut, type GameDoc, type Profile } from '../data'
-import { lifetimeStats } from '../scoring'
+import { signOut, type GameDoc, type Profile, type Stats } from '../data'
+
+export interface BoardRow extends Stats {
+  key: string
+  name: string
+  kind: 'me' | 'friend' | 'guest'
+}
 
 interface Props {
   me: Profile
-  users: Profile[]
+  board: BoardRow[]
   myGames: GameDoc[]
-  finished: GameDoc[]
+  onFriends: () => void
   onNew: () => void
   onOpen: (id: string) => void
   onResults: (id: string) => void
 }
 
-export function Home({ me, users, myGames, finished, onNew, onOpen, onResults }: Props) {
+export function Home({ me, board, myGames, onFriends, onNew, onOpen, onResults }: Props) {
   const live = myGames.find((g) => g.status === 'live')
   const past = myGames.filter((g) => g.status === 'ended')
-  const names = Object.fromEntries(users.map((u) => [u.uid, u.name]))
-  const stats = lifetimeStats(finished.flatMap((g) => (g.results ? [g.results] : [])), names)
 
   return (
     <div className="screen">
       <header className="bar">
         <span className="muted">Hi, {me.name}</span>
-        <span />
+        <button className="link" onClick={onFriends}>
+          👥 Friends
+        </button>
         <button
           className="link"
           onClick={() => confirm('Sign out of Esla on this phone?') && signOut()}
@@ -49,7 +54,7 @@ export function Home({ me, users, myGames, finished, onNew, onOpen, onResults }:
         ＋ New game
       </button>
 
-      {stats.length > 0 && (
+      {board.some((r) => r.games > 0) && (
         <section>
           <h3>Leaderboard</h3>
           <table className="table">
@@ -64,16 +69,16 @@ export function Home({ me, users, myGames, finished, onNew, onOpen, onResults }:
               </tr>
             </thead>
             <tbody>
-              {stats.map((s) => (
-                <tr key={s.key} className={s.uid === me.uid ? 'me' : ''}>
+              {board.map((s) => (
+                <tr key={s.key} className={s.kind === 'me' ? 'me' : ''}>
                   <td>
                     {s.name}
-                    {!s.uid && <span className="muted small"> guest</span>}
+                    {s.kind === 'guest' && <span className="muted small"> guest</span>}
                   </td>
                   <td>{s.wins}</td>
                   <td>{s.games}</td>
                   <td>{s.points}</td>
-                  <td>{s.best}</td>
+                  <td>{s.best ?? '–'}</td>
                   <td>
                     {s.whiteCars}/{s.whiteTrucks}
                   </td>

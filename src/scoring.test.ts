@@ -65,4 +65,8 @@ describe('lifetimeStats', () => {
     const stats = lifetimeStats([g1, g2], { u1: 'Annie' })
     expect(stats.filter((s) => s.uid === 'u1')).toEqual([expect.objectContaining({ name: 'Annie', games: 2, points: 4 })])
   })
+  it('keeps saved guests apart even with the same name', () => {
+    const g = results(game([ev('a', 2), ev('b', 4)])).map((r) => ({ ...r, name: 'Kid', guestId: r.playerId }))
+    expect(lifetimeStats([g]).map((s) => s.key)).toEqual(['guest:b', 'guest:a'])
+  })
 })

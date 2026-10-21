@@ -103,5 +103,8 @@ A player ends the game when they choose (usually when you reach your destination
 - [x] Step 2: PWA install + offline
 - [x] Step 3: Firebase accounts + shared live games (players with accounts are added from a
   friends list instead of a join code, so their phones open the game automatically)
-- [x] Step 4: lifetime stats in the cloud (friends leaderboard of everyone with an account)
+- [x] Step 4: lifetime stats in the cloud
+- [x] Friends: add by 6-character friend code; you only see yourself, your friends, and games
+  you're in. Leaderboard = you + friends + your saved guests. Guests you add are saved to your
+  account (with their own stats) for future games.
 - [ ] Live on GitHub Pages: https://cvoogt.github.io/esla-game/

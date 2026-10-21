@@ -1,34 +1,49 @@
 import { useState } from 'react'
-import { newId, type Profile } from '../data'
+import { newId, saveGuests, type Profile } from '../data'
 import type { Player } from '../scoring'
 
 interface Props {
-  users: Profile[]
+  me: Profile
+  friends: Profile[]
   taken: Player[]
   onPick: (player: Player) => void
 }
 
-/** Add an account holder with one tap, or type a guest's name. */
-export function PlayerPicker({ users, taken, onPick }: Props) {
+/** Add a friend or a saved guest with one tap, or type a new guest (saved for next time). */
+export function PlayerPicker({ me, friends, taken, onPick }: Props) {
   const [draft, setDraft] = useState('')
   const takenUids = new Set(taken.flatMap((p) => (p.uid ? [p.uid] : [])))
+  const takenGuests = new Set(taken.flatMap((p) => (p.guestId ? [p.guestId] : [])))
   const takenNames = new Set(taken.map((p) => p.name.toLowerCase()))
-  const friends = users.filter((u) => !takenUids.has(u.uid))
+  const freeFriends = friends.filter((f) => !takenUids.has(f.uid))
+  const freeGuests = me.guests.filter((g) => !takenGuests.has(g.id))
 
   function addGuest() {
     const name = draft.trim()
     if (!name || takenNames.has(name.toLowerCase())) return
-    onPick({ id: newId(), name })
+    const existing = me.guests.find((g) => g.name.toLowerCase() === name.toLowerCase())
+    const guest = existing ?? { id: newId(), name }
+    if (!existing) saveGuests(me.uid, [...me.guests, guest])
+    onPick({ id: newId(), name: guest.name, guestId: guest.id })
     setDraft('')
   }
 
   return (
     <>
-      {friends.length > 0 && (
+      {freeFriends.length > 0 && (
         <div className="chips">
-          {friends.map((u) => (
-            <button key={u.uid} className="chip" onClick={() => onPick({ id: newId(), name: u.name, uid: u.uid })}>
-              + {u.name}
+          {freeFriends.map((f) => (
+            <button key={f.uid} className="chip" onClick={() => onPick({ id: newId(), name: f.name, uid: f.uid })}>
+              + {f.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {freeGuests.length > 0 && (
+        <div className="chips">
+          {freeGuests.map((g) => (
+            <button key={g.id} className="chip guest" onClick={() => onPick({ id: newId(), name: g.name, guestId: g.id })}>
+              + {g.name} <span className="muted small">guest</span>
             </button>
           ))}
         </div>
@@ -40,7 +55,7 @@ export function PlayerPicker({ users, taken, onPick }: Props) {
           addGuest()
         }}
       >
-        <input className="grow" placeholder="Guest name (no account)" value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <input className="grow" placeholder="New guest name" value={draft} onChange={(e) => setDraft(e.target.value)} />
         <button className="big primary narrow" type="submit" disabled={!draft.trim()}>
           Add
         </button>

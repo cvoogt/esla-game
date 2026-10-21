@@ -5,12 +5,12 @@ import type { Player } from '../scoring'
 
 interface Props {
   me: Profile
-  users: Profile[]
+  friends: Profile[]
   onBack: () => void
   onStart: (players: Player[]) => void
 }
 
-export function Setup({ me, users, onBack, onStart }: Props) {
+export function Setup({ me, friends, onBack, onStart }: Props) {
   const [players, setPlayers] = useState<Player[]>([{ id: newId(), name: me.name, uid: me.uid }])
 
   return (
@@ -37,8 +37,8 @@ export function Setup({ me, users, onBack, onStart }: Props) {
       </ul>
 
       <h3>Add players</h3>
-      <PlayerPicker users={users} taken={players} onPick={(p) => setPlayers([...players, p])} />
-      <p className="muted small">Friends with accounts can score from their own phones.</p>
+      <PlayerPicker me={me} friends={friends} taken={players} onPick={(p) => setPlayers([...players, p])} />
+      <p className="muted small">Friends can score from their own phones. Add friends from the home screen.</p>
 
       <div className="footer">
         <button className="big primary" disabled={players.length === 0} onClick={() => onStart(players)}>

@@ -3,8 +3,10 @@ import type { ColorKey, Vehicle } from './rules'
 export interface Player {
   id: string
   name: string
-  /** Set when the player has an account; guests have none. */
+  /** Set when the player has an account. */
   uid?: string
+  /** Set for a guest saved to someone's account, so their stats add up across games. */
+  guestId?: string
 }
 
 /**
@@ -85,6 +87,7 @@ function compare(a: Standing, b: Standing) {
 export interface Result {
   playerId: string
   uid: string | null
+  guestId?: string | null
   name: string
   score: number
   whiteCars: number
@@ -96,6 +99,7 @@ export function results(game: Game): Result[] {
   return standings(game).map((s) => ({
     playerId: s.player.id,
     uid: s.player.uid ?? null,
+    guestId: s.player.guestId ?? null,
     name: s.player.name,
     score: s.score,
     whiteCars: s.whiteCars,
@@ -116,12 +120,16 @@ export interface LifetimeStats {
   best: number
 }
 
-/** Accounts are grouped by uid; guests by name. */
+export function statKey(r: { uid?: string | null; guestId?: string | null; name: string }) {
+  return r.uid ?? (r.guestId ? 'guest:' + r.guestId : 'name:' + r.name.trim().toLowerCase())
+}
+
+/** Accounts are grouped by uid, saved guests by guest id, anyone else by name. */
 export function lifetimeStats(games: Result[][], names: Record<string, string> = {}): LifetimeStats[] {
   const byKey = new Map<string, LifetimeStats>()
   for (const game of games) {
     for (const r of game) {
-      const key = r.uid ?? 'guest:' + r.name.trim().toLowerCase()
+      const key = statKey(r)
       const st = byKey.get(key) ?? {
         key,
         uid: r.uid,

@@ -583,3 +583,23 @@ h3 {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.code-box {
+  text-align: center;
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.code-box .code {
+  font: 800 40px/1.2 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.15em;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.code-input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}

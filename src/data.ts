@@ -10,7 +10,9 @@ import {
 import {
   arrayUnion,
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
@@ -29,10 +31,27 @@ export interface CustomSighting {
   points: number
 }
 
+export interface Guest {
+  id: string
+  name: string
+}
+
+export interface Stats {
+  games: number
+  wins: number
+  points: number
+  whiteCars: number
+  whiteTrucks: number
+  best: number | null
+}
+
 export interface Profile {
   uid: string
   name: string
   customs: CustomSighting[]
+  guests: Guest[]
+  friendCode?: string
+  stats?: Stats
 }
 
 /** Game document without its events (events live in a subcollection). */
@@ -46,6 +65,8 @@ export type NewEvent = Omit<ScoreEvent, 'id' | 'at'>
 
 const games = collection(db, 'games')
 const users = collection(db, 'users')
+const friendCodes = collection(db, 'friendCodes')
+const friendships = collection(db, 'friendships')
 const eventsOf = (gameId: string) => collection(db, 'games', gameId, 'events')
 
 export const newId = () => doc(games).id
@@ -70,7 +91,7 @@ export function useAuth() {
 export async function signUp(name: string, email: string, password: string) {
   const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password)
   await updateProfile(user, { displayName: name })
-  await setDoc(doc(users, user.uid), { name, customs: [] })
+  await setDoc(doc(users, user.uid), { name, customs: [], guests: [] })
 }
 
 export const signIn = (email: string, password: string) => signInWithEmailAndPassword(auth, email.trim(), password)
@@ -80,39 +101,105 @@ export const signOut = () => fbSignOut(auth)
 // ---------- Users ----------
 
 function toProfile(uid: string, data: Record<string, unknown>): Profile {
-  return { uid, name: String(data.name ?? 'Player'), customs: (data.customs as CustomSighting[]) ?? [] }
-}
-
-export function useUsers() {
-  const [list, setList] = useState<Profile[]>([])
-  useEffect(
-    () =>
-      onSnapshot(users, (snap) =>
-        setList(
-          snap.docs
-            .map((d) => toProfile(d.id, d.data()))
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ),
-      ),
-    [],
-  )
-  return list
+  return {
+    uid,
+    name: String(data.name ?? 'Player'),
+    customs: (data.customs as CustomSighting[]) ?? [],
+    guests: (data.guests as Guest[]) ?? [],
+    friendCode: data.friendCode as string | undefined,
+    stats: data.stats as Stats | undefined,
+  }
 }
 
 export function useProfile(uid: string) {
   const [profile, setProfile] = useState<Profile>()
-  useEffect(
-    () =>
-      onSnapshot(doc(users, uid), (d) =>
-        setProfile(d.exists() ? toProfile(uid, d.data()) : undefined),
-      ),
-    [uid],
-  )
+  useEffect(() => onSnapshot(doc(users, uid), (d) => setProfile(d.exists() ? toProfile(uid, d.data()) : undefined)), [uid])
   return profile
 }
 
 export function saveCustoms(uid: string, customs: CustomSighting[]) {
   bg(setDoc(doc(users, uid), { customs: customs.slice(0, 16) }, { merge: true }))
+}
+
+export function saveGuests(uid: string, guests: Guest[]) {
+  bg(setDoc(doc(users, uid), { guests }, { merge: true }))
+}
+
+export function saveStats(uid: string, stats: Stats) {
+  bg(setDoc(doc(users, uid), { stats }, { merge: true }))
+}
+
+// ---------- Friends ----------
+
+// No 0/O or 1/I/L, so codes are easy to read out loud in the car.
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const randomCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => CODE_CHARS[b % CODE_CHARS.length]).join('')
+
+export const pairId = (a: string, b: string) => (a < b ? `${a}_${b}` : `${b}_${a}`)
+
+/** Gives an account its friend code the first time it's needed. */
+export async function ensureFriendCode(uid: string) {
+  for (let tries = 0; tries < 5; tries++) {
+    const code = randomCode()
+    const batch = writeBatch(db)
+    batch.set(doc(friendCodes, code), { uid })
+    batch.set(doc(users, uid), { friendCode: code }, { merge: true })
+    try {
+      await batch.commit()
+      return
+    } catch (e) {
+      // Code already taken by someone else; try another.
+      if ((e as { code?: string }).code !== 'permission-denied') throw e
+    }
+  }
+}
+
+export async function addFriendByCode(me: string, raw: string) {
+  const code = raw.trim().toUpperCase()
+  const hit = await getDoc(doc(friendCodes, code))
+  const uid = hit.data()?.uid as string | undefined
+  if (!uid) throw new Error('No one has that friend code.')
+  if (uid === me) throw new Error("That's your own code.")
+  await setDoc(doc(friendships, pairId(me, uid)), { members: [me, uid].sort(), code, createdAt: Date.now() })
+}
+
+export function removeFriend(me: string, uid: string) {
+  bg(deleteDoc(doc(friendships, pairId(me, uid))))
+}
+
+/** My friends' profiles, live. */
+export function useFriends(uid: string) {
+  const [ids, setIds] = useState<string[]>([])
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({})
+  useEffect(
+    () =>
+      // Wait for the server to confirm a new friendship; reading their profile before that is refused.
+      onSnapshot(query(friendships, where('members', 'array-contains', uid)), { includeMetadataChanges: true }, (snap) =>
+        setIds(
+          snap.docs
+            .filter((d) => !d.metadata.hasPendingWrites)
+            .map((d) => (d.data().members as string[]).find((m) => m !== uid)!)
+            .filter(Boolean),
+        ),
+      ),
+    [uid],
+  )
+  const key = ids.join(',')
+  useEffect(() => {
+    const offs = ids.map((id) =>
+      onSnapshot(
+        doc(users, id),
+        (d) => d.exists() && setProfiles((p) => ({ ...p, [id]: toProfile(id, d.data()) })),
+        () => {}, // friendship just removed; access is gone
+      ),
+    )
+    return () => offs.forEach((off) => off())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return ids
+    .map((id) => profiles[id])
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 // ---------- Games ----------
@@ -130,16 +217,6 @@ export function useMyGames(uid: string) {
         setList(snap.docs.map((d) => toGameDoc(d.id, d.data())).sort((a, b) => b.startedAt - a.startedAt)),
       ),
     [uid],
-  )
-  return list
-}
-
-/** Every finished game in the app, for the friends leaderboard. */
-export function useFinishedGames() {
-  const [list, setList] = useState<GameDoc[]>([])
-  useEffect(
-    () => onSnapshot(query(games, where('status', '==', 'ended')), (snap) => setList(snap.docs.map((d) => toGameDoc(d.id, d.data())))),
-    [],
   )
   return list
 }
