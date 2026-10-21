@@ -18,10 +18,11 @@ interface Props {
   friends: Profile[]
   onHome: () => void
   onLog: () => void
+  onRules: () => void
   onEnd: () => void
 }
 
-export function Play({ game, me, friends, onHome, onLog, onEnd }: Props) {
+export function Play({ game, me, friends, onHome, onLog, onRules, onEnd }: Props) {
   const { sound } = usePrefs()
   const [active, setActive] = useState<string>()
   const [adding, setAdding] = useState(false)
@@ -89,9 +90,14 @@ export function Play({ game, me, friends, onHome, onLog, onEnd }: Props) {
           ← Home
         </button>
         <h2>Esla</h2>
-        <button className="link" onClick={toggleSound} aria-label="Toggle sound">
-          {sound ? '🔊' : '🔇'}
-        </button>
+        <span>
+          <button className="link" onClick={onRules} aria-label="Rules">
+            📖
+          </button>
+          <button className="link" onClick={toggleSound} aria-label="Toggle sound">
+            {sound ? '🔊' : '🔇'}
+          </button>
+        </span>
       </header>
 
       {game.endedAt && <div className="banner">Editing a finished game</div>}

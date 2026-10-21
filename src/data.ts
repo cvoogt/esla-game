@@ -52,6 +52,7 @@ export interface Profile {
   guests: Guest[]
   friendCode?: string
   stats?: Stats
+  tutorialSeen?: boolean
 }
 
 /** Game document without its events (events live in a subcollection). */
@@ -108,6 +109,7 @@ function toProfile(uid: string, data: Record<string, unknown>): Profile {
     guests: (data.guests as Guest[]) ?? [],
     friendCode: data.friendCode as string | undefined,
     stats: data.stats as Stats | undefined,
+    tutorialSeen: data.tutorialSeen === true,
   }
 }
 
@@ -123,6 +125,10 @@ export function saveCustoms(uid: string, customs: CustomSighting[]) {
 
 export function saveGuests(uid: string, guests: Guest[]) {
   bg(setDoc(doc(users, uid), { guests }, { merge: true }))
+}
+
+export function markTutorialSeen(uid: string) {
+  bg(setDoc(doc(users, uid), { tutorialSeen: true }, { merge: true }))
 }
 
 export function saveStats(uid: string, stats: Stats) {
@@ -221,6 +227,27 @@ export function useMyGames(uid: string) {
   return list
 }
 
+/**
+ * onSnapshot that re-subscribes when refused. A brand-new game is listened to
+ * before the server has saved it, and the privacy rules refuse that first read.
+ */
+function retrySnapshot(subscribe: (onError: (e: unknown) => void) => () => void) {
+  let off = () => {}
+  let timer: number | undefined
+  let tries = 0
+  const start = () => {
+    off = subscribe((e) => {
+      console.warn('listener refused, retrying', e)
+      if (tries++ < 10) timer = window.setTimeout(start, 500 * tries)
+    })
+  }
+  start()
+  return () => {
+    window.clearTimeout(timer)
+    off()
+  }
+}
+
 /** A single game with its events, live. */
 export function useGame(id: string | undefined) {
   const [meta, setMeta] = useState<GameDoc | null>()
@@ -229,9 +256,15 @@ export function useGame(id: string | undefined) {
     if (!id) return
     setMeta(undefined)
     setEvents(undefined)
-    const offGame = onSnapshot(doc(games, id), (d) => setMeta(d.exists() ? toGameDoc(d.id, d.data()) : null))
-    const offEvents = onSnapshot(eventsOf(id), (snap) =>
-      setEvents(snap.docs.map((d) => ({ ...(d.data() as ScoreEvent), id: d.id })).sort((a, b) => a.at - b.at)),
+    const offGame = retrySnapshot((onError) =>
+      onSnapshot(doc(games, id), (d) => setMeta(d.exists() ? toGameDoc(d.id, d.data()) : null), onError),
+    )
+    const offEvents = retrySnapshot((onError) =>
+      onSnapshot(
+        eventsOf(id),
+        (snap) => setEvents(snap.docs.map((d) => ({ ...(d.data() as ScoreEvent), id: d.id })).sort((a, b) => a.at - b.at)),
+        onError,
+      ),
     )
     return () => {
       offGame()

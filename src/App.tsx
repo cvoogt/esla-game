@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   createGame,
   ensureFriendCode,
+  markTutorialSeen,
   saveStats,
   useAuth,
   useFriends,
@@ -18,8 +19,10 @@ import { Home, type BoardRow } from './screens/Home'
 import { Log } from './screens/Log'
 import { Play } from './screens/Play'
 import { Results } from './screens/Results'
+import { Rules } from './screens/Rules'
 import { Setup } from './screens/Setup'
 import { SignIn } from './screens/SignIn'
+import { Tutorial } from './screens/Tutorial'
 
 export function App() {
   const user = useAuth()
@@ -38,7 +41,7 @@ function Splash() {
   )
 }
 
-type View = 'home' | 'setup' | 'play' | 'log' | 'results' | 'friends'
+type View = 'home' | 'setup' | 'play' | 'log' | 'results' | 'friends' | 'rules' | 'tutorial'
 
 const EMPTY: Stats = { games: 0, wins: 0, points: 0, whiteCars: 0, whiteTrucks: 0, best: null }
 
@@ -66,19 +69,27 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
   const friends = useFriends(uid)
   const myGames = useMyGames(uid)
   const [view, setView] = useState<View>('home')
+  // Rules and the tutorial can be opened from several screens; remember where to go back to.
+  const [back, setBack] = useState<View>('home')
   const [gameId, setGameId] = useState<string>()
   const game = useGame(gameId)
+
+  // Offer the tutorial once per account, before anything else.
+  const firstTime = profile?.tutorialSeen === false
+  useEffect(() => {
+    if (firstTime) setView('tutorial')
+  }, [firstTime])
 
   // Jump into a live game when the app opens (or when a friend starts one),
   // until the user navigates somewhere themselves.
   const navigated = useRef(false)
   const live = myGames?.find((g) => g.status === 'live')
   useEffect(() => {
-    if (!navigated.current && live && view === 'home') {
+    if (!navigated.current && live && view === 'home' && !firstTime) {
       setGameId(live.id)
       setView('play')
     }
-  }, [live, view])
+  }, [live, view, firstTime])
 
   // Accounts made before friend codes existed get one now.
   const needsCode = profile && !profile.friendCode
@@ -103,7 +114,27 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
     window.scrollTo(0, 0)
   }
 
+  function open(v: 'rules' | 'tutorial') {
+    setBack(view === 'rules' || view === 'tutorial' ? back : view)
+    go(v)
+  }
+
   if (!myGames) return <Splash />
+
+  if (view === 'tutorial')
+    return (
+      <Tutorial
+        onDone={() => {
+          if (firstTime) {
+            markTutorialSeen(uid)
+            navigated.current = false // let a live game open now
+            setView('home')
+          } else go(back)
+        }}
+      />
+    )
+
+  if (view === 'rules') return <Rules onBack={() => go(back)} onTutorial={() => open('tutorial')} />
 
   if (view === 'friends') return <Friends me={me} friends={friends} onBack={() => go('home')} />
 
@@ -124,6 +155,8 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
         board={board}
         myGames={myGames}
         onFriends={() => go('friends')}
+        onRules={() => open('rules')}
+        onTutorial={() => open('tutorial')}
         onNew={() => go('setup')}
         onOpen={(id) => go('play', id)}
         onResults={(id) => go('results', id)}
@@ -133,5 +166,5 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
   if (!game) return <Splash />
   if (view === 'log') return <Log game={game} onBack={() => go('play')} />
   if (view === 'results') return <Results game={game} onHome={() => go('home')} onEdit={() => go('play')} />
-  return <Play game={game} me={me} friends={friends} onHome={() => go('home')} onLog={() => go('log')} onEnd={() => go('results')} />
+  return <Play game={game} me={me} friends={friends} onHome={() => go('home')} onLog={() => go('log')} onRules={() => open('rules')} onEnd={() => go('results')} />
 }

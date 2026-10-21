@@ -11,12 +11,14 @@ interface Props {
   board: BoardRow[]
   myGames: GameDoc[]
   onFriends: () => void
+  onRules: () => void
+  onTutorial: () => void
   onNew: () => void
   onOpen: (id: string) => void
   onResults: (id: string) => void
 }
 
-export function Home({ me, board, myGames, onFriends, onNew, onOpen, onResults }: Props) {
+export function Home({ me, board, myGames, onFriends, onRules, onTutorial, onNew, onOpen, onResults }: Props) {
   const live = myGames.find((g) => g.status === 'live')
   const past = myGames.filter((g) => g.status === 'ended')
 
@@ -24,9 +26,7 @@ export function Home({ me, board, myGames, onFriends, onNew, onOpen, onResults }
     <div className="screen">
       <header className="bar">
         <span className="muted">Hi, {me.name}</span>
-        <button className="link" onClick={onFriends}>
-          👥 Friends
-        </button>
+        <span />
         <button
           className="link"
           onClick={() => confirm('Sign out of Esla on this phone?') && signOut()}
@@ -53,6 +53,18 @@ export function Home({ me, board, myGames, onFriends, onNew, onOpen, onResults }
       >
         ＋ New game
       </button>
+
+      <div className="tiles">
+        <button onClick={onRules}>
+          <span>📖</span>Rules
+        </button>
+        <button onClick={onTutorial}>
+          <span>🎓</span>Tutorial
+        </button>
+        <button onClick={onFriends}>
+          <span>👥</span>Friends
+        </button>
+      </div>
 
       {board.some((r) => r.games > 0) && (
         <section>

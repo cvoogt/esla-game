@@ -603,3 +603,124 @@ h3 {
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tiles button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.tiles button span {
+  font-size: 26px;
+}
+
+.tiles button:active {
+  background: var(--panel-2);
+}
+
+.rule-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-list li {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.rule-list li.sub {
+  margin-left: 16px;
+  padding: 8px 14px;
+}
+
+.points-table td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch.inline {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid #ffffff40;
+}
+
+.swatch.inline.square {
+  border-radius: 4px;
+  transform: skewX(-12deg);
+}
+
+.points-table tbody tr:first-child td {
+  color: var(--gold);
+}
+
+.tutorial .step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fade 0.25s;
+}
+
+.tutorial .step h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.tutorial .step p {
+  margin: 0;
+}
+
+.step-icon {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.demo {
+  pointer-events: none;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.dots button.on {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 4px;
+}
+
+.tutorial .footer {
+  margin-top: 0;
+}

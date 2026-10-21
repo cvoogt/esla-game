@@ -107,4 +107,6 @@ A player ends the game when they choose (usually when you reach your destination
 - [x] Friends: add by 6-character friend code; you only see yourself, your friends, and games
   you're in. Leaderboard = you + friends + your saved guests. Guests you add are saved to your
   account (with their own stats) for future games.
-- [ ] Live on GitHub Pages: https://cvoogt.github.io/esla-game/
+- [x] Tutorial (offered once per account, replayable from the home screen) and a Rules page
+  (reachable from home and mid-game; point tables generated from the scoring rules)
+- [x] Live on GitHub Pages: https://cvoogt.github.io/esla-game/
