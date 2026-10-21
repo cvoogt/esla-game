@@ -1,0 +1,275 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../src/styles.css" />
+<style>
+  html, body { width: 1920px; height: 1080px; overflow: hidden; margin: 0; }
+  body { font-family: Inter, sans-serif; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: var(--bg); }
+  #glow { position: absolute; inset: 0; }
+  .lane { position: absolute; top: -200px; width: 10px; height: 1500px;
+    background: repeating-linear-gradient(to bottom, #ffffff10 0 90px, transparent 90px 200px); }
+
+  /* Hook */
+  #hook { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #words { display: grid; grid-template-columns: repeat(2, 760px); gap: 22px 90px; }
+  .word { display: flex; align-items: center; gap: 30px; font: 900 132px/1 'Inter Display', Inter, sans-serif; letter-spacing: -0.02em; }
+  .word .sw { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #ffffff40; flex: none; }
+  .word .sw.square { border-radius: 12px; transform: skewX(-12deg); }
+  .word .p { font-size: 48px; font-weight: 800; color: var(--good); }
+  #hookline { margin-top: 70px; font: 700 64px/1.1 Inter, sans-serif; color: var(--text); }
+  #hookline b { color: var(--accent); }
+
+  /* Captions */
+  .cap { position: absolute; left: 170px; top: 50%; width: 780px; transform: translateY(-50%); }
+  .cap .eyebrow { font: 800 26px/1 Inter, sans-serif; letter-spacing: 0.22em; color: var(--accent); margin-bottom: 28px; }
+  .cap .l { font: 800 84px/1.06 'Inter Display', Inter, sans-serif; letter-spacing: -0.02em; color: var(--text); }
+  .cap .l.muted { color: var(--muted); font-weight: 600; font-size: 46px; line-height: 1.25; margin-top: 20px; }
+  .cap .pill { display: inline-block; margin-top: 34px; padding: 10px 30px; border-radius: 999px; font: 900 72px/1.1 Inter, sans-serif; }
+  .cap .logo { font: 800 170px/1 Inter, sans-serif; letter-spacing: 0.12em; color: var(--accent); }
+  .cap .icon { width: 132px; height: 132px; margin-bottom: 34px; border-radius: 30px; box-shadow: 0 20px 50px #0009; }
+  .cap .url { margin-top: 40px; font: 600 34px/1 ui-monospace, 'DejaVu Sans Mono', monospace; color: var(--muted); }
+
+  /* Phone */
+  #phone { position: absolute; left: 1130px; top: 50%; width: 430px; height: 912px; margin-top: -456px;
+    border-radius: 66px; background: #000; padding: 14px; box-shadow: 0 0 0 2px #2b3241, 0 50px 120px #000c, 0 0 160px #e3193722; }
+  #screen { position: relative; width: 402px; height: 884px; border-radius: 54px; overflow: hidden; background: var(--bg);
+    transform: translateZ(0); font: 17px/1.35 Inter, sans-serif; }
+  #island { position: absolute; top: 12px; left: 50%; width: 120px; height: 34px; margin-left: -60px; border-radius: 20px; background: #000; z-index: 50; }
+  #status { position: absolute; top: 18px; left: 40px; right: 34px; display: flex; justify-content: space-between; font: 600 16px/1 Inter; z-index: 49; }
+  .page { position: absolute; inset: 0; }
+  #screen * { animation: none !important; }
+  #screen .screen { min-height: 0; height: 884px; padding-top: 58px; padding-bottom: 28px; position: relative; }
+  #screen .footer { position: absolute; left: 16px; right: 16px; bottom: 28px; }
+  #screen .sheet-backdrop, #screen .toast { position: absolute; }
+  #screen .toast { bottom: 104px; }
+  #screen .sheet { padding-bottom: 30px; }
+  #screen .cards { position: relative; }
+  #tap { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+    background: #ffffff55; border: 3px solid #ffffffcc; z-index: 60; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div class="lane" id="lane1" style="left: 1030px"></div>
+  <div class="lane" id="lane2" style="left: 1745px"></div>
+  <div id="hook">
+    <div id="words"></div>
+    <div id="hookline">Spot a Tesla. <b>Call it out.</b></div>
+  </div>
+  <div id="caps"></div>
+  <div id="phone"><div id="screen"></div></div>
+</div>
+
+<script>
+const SWATCH = { white: '#f5f5f5', grey: '#7d828a', black: '#151515', blue: '#2563eb', silver: '#c0c4c9', red: '#dc2626', pink: '#f472b6', purple: '#8b5cf6' }
+const CARS = [['white','Wesla',2],['grey','Gresla',1],['black','Blesla',1],['blue','Blusla',1],['silver','Sesla',1],['red','Resla',1],['pink','Pesla',1],['purple','Puresla',1]]
+const TRUCKS = [['white','Whuck',3],['grey','Gruck',2],['black','Bluck',2],['blue','Blueck',2],['silver','Suck',2],['red','Ruck',2],['pink','Puck',2],['purple','Puruck',2]]
+const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0b0d12"/><path d="M96 168c48-30 104-44 160-44s112 14 160 44l-14 24c-40-20-90-32-146-32s-106 12-146 32z" fill="#e31937"/><text x="256" y="372" text-anchor="middle" font-family="Inter, sans-serif" font-weight="900" font-size="200" fill="#f1f3f7">E</text></svg>`
+
+// Timeline (seconds). Beats fall on 0.25 + 0.5k.
+const T = { reveal: 4.25, h1: 7.25, h2: 11.25, h3: 14.25, outro: 17.25, end: 21.5 }
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const lin = (t, a, b) => clamp((t - a) / (b - a))
+const eo = (x) => 1 - Math.pow(1 - x, 3)
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2) }
+const fmt = (p) => (p > 0 ? `+${p}` : p < 0 ? `−${-p}` : '0')
+
+// Hook words
+const HOOK = [['white', 'WESLA', 2, 0], ['red', 'RESLA', 1, 0], ['white', 'WHUCK', 3, 1], ['purple', 'PURUCK', 2, 1]]
+document.getElementById('words').innerHTML = HOOK.map(([c, w, p, sq]) =>
+  `<div class="word"><span class="sw ${sq ? 'square' : ''}" style="background:${SWATCH[c]}"></span><span style="color:${c === 'white' ? '#f1f3f7' : SWATCH[c]}">${w}</span><span class="p">+${p}</span></div>`).join('')
+
+// Captions
+const CAPS = [
+  { a: T.reveal, b: T.h1, html: `<div class="l logo-l"><span class="logo">ESLA</span></div><div class="l muted">The score counter for<br>spotting Teslas.</div>` },
+  { a: T.h1, b: T.h2, html: `<div class="eyebrow">CALL IT</div><div class="l">White Cybertruck?</div><div class="l">That’s a Whuck.</div><div class="pill" style="background:#14532d;color:#4ade80">+3</div>` },
+  { a: T.h2, b: T.h3, html: `<div class="eyebrow">MISS IT</div><div class="l">Missed the call?</div><div class="l">It costs you.</div><div class="pill" style="background:#5a1a1a;color:#fca5a5">−3</div>` },
+  { a: T.h3, b: T.outro, html: `<div class="eyebrow">JACKPOT</div><div class="l">Passed a</div><div class="l">dealership?</div><div class="pill" style="background:linear-gradient(135deg,#3b2a05,#5a3e00);color:#fbbf24">+50</div>` },
+  { a: T.outro, b: 99, html: `<div class="icon">${ICON}</div><div class="l">Every phone</div><div class="l">in the car.</div><div class="l" style="color:var(--accent)">Scored live.</div><div class="url">cvoogt.github.io/esla-game</div>` },
+]
+const capsEl = document.getElementById('caps')
+capsEl.innerHTML = CAPS.map((c, i) => `<div class="cap" id="cap${i}">${c.html}</div>`).join('')
+
+// Game state over time
+const PLAYERS = ['Maya', 'Dad', 'Leo']
+const BASE = { Maya: { s: 24, wc: 4, wt: 1 }, Dad: { s: 21, wc: 3, wt: 0 }, Leo: { s: 19, wc: 2, wt: 1 } }
+// Each beat of the demo: open sheet, taps inside it, then score.
+const DEMO = [
+  { who: 'Maya', open: 7.75, taps: [{ t: 8.55, sel: '[data-k="truck"]', set: { vehicle: 'truck' } }], score: { t: 9.35, sel: '[data-k="Whuck"]', pts: 3, label: 'Whuck', wt: 1 } },
+  { who: 'Leo', open: 11.6, taps: [{ t: 12.2, sel: '[data-k="missed"]', set: { missed: true } }, { t: 12.65, sel: '[data-k="truck"]', set: { vehicle: 'truck' } }], score: { t: 13.2, sel: '[data-k="Whuck"]', pts: -3, label: 'Missed Whuck' } },
+  { who: 'Dad', open: 14.6, taps: [], score: { t: 15.35, sel: '[data-k="dealer"]', pts: 50, label: 'Dealership' } },
+]
+
+function stateAt(t) {
+  const sc = JSON.parse(JSON.stringify(BASE))
+  const prev = JSON.parse(JSON.stringify(BASE))
+  let sheet = null, toast = null, flash = {}, tap = null, events = 37, rankP = 0
+  for (const d of DEMO) {
+    // tap on player card
+    if (t >= d.open - 0.25 && t < d.open + 0.12) tap = { sel: `[data-card="${d.who}"]`, p: lin(t, d.open - 0.25, d.open + 0.12) }
+    if (t >= d.open && t < d.score.t + 0.3) {
+      const st = { who: d.who, vehicle: 'car', missed: false, p: eo(lin(t, d.open, d.open + 0.32)) }
+      for (const k of d.taps) {
+        if (t >= k.t - 0.25 && t < k.t + 0.12) tap = { sel: k.sel, p: lin(t, k.t - 0.25, k.t + 0.12) }
+        if (t >= k.t) Object.assign(st, k.set)
+      }
+      if (t >= d.score.t - 0.25 && t < d.score.t + 0.12) tap = { sel: d.score.sel, p: lin(t, d.score.t - 0.25, d.score.t + 0.12) }
+      if (t >= d.score.t) st.p = 1 - eio(lin(t, d.score.t + 0.05, d.score.t + 0.3))
+      sheet = st
+    }
+    if (t >= d.score.t + 0.12) {
+      const k = eo(lin(t, d.score.t + 0.15, d.score.t + 0.65))
+      prev[d.who].s = sc[d.who].s
+      sc[d.who].s += d.score.pts
+      sc[d.who].shown = Math.round(prev[d.who].s + (sc[d.who].s - prev[d.who].s) * k)
+      if (d.score.wt) sc[d.who].wt += d.score.wt
+      events++
+      flash[d.who] = { good: d.score.pts > 0, p: lin(t, d.score.t + 0.15, d.score.t + 0.9) }
+      toast = { text: `${d.who}: ${d.score.label} ${fmt(d.score.pts)}`, bad: d.score.pts < 0, p: eo(lin(t, d.score.t + 0.15, d.score.t + 0.4)) }
+      if (d.who === 'Dad') rankP = eio(lin(t, d.score.t + 0.45, d.score.t + 0.95))
+    }
+  }
+  for (const p of PLAYERS) if (sc[p].shown === undefined) sc[p].shown = sc[p].s
+  return { sc, sheet, toast, flash, tap, events, rankP }
+}
+
+function cardsHTML(st) {
+  // DOM order is fixed (Maya, Dad, Leo); rank swaps animate with transforms.
+  const order0 = ['Maya', 'Dad', 'Leo'], order1 = ['Dad', 'Maya', 'Leo']
+  return PLAYERS.map((p) => {
+    const i0 = order0.indexOf(p), i1 = order1.indexOf(p)
+    const dy = (i1 - i0) * 94 * st.rankP
+    const rank = (st.rankP > 0.5 ? i1 : i0) + 1
+    const f = st.flash[p]
+    let bg = '', bc = ''
+    if (f && f.p < 1) {
+      const a = 1 - eo(f.p)
+      bg = `background: color-mix(in srgb, ${f.good ? '#14532d' : '#5a1a1a'} ${a * 100}%, var(--panel));`
+      bc = `border-color: color-mix(in srgb, ${f.good ? 'var(--good)' : 'var(--bad)'} ${a * 100}%, var(--line));`
+    }
+    const s = st.sc[p]
+    return `<button class="card" data-card="${p}" style="transform:translateY(${dy}px);${bg}${bc}${p === 'Dad' && st.rankP > 0 && st.rankP < 1 ? 'z-index:2;position:relative' : ''}">
+      <span class="rank">${rank}</span><span class="name">${p}</span>
+      <span class="whites"><span>⚪ ${s.wc}</span><span>⬜ ${s.wt}</span></span>
+      <span class="score">${s.shown}</span></button>`
+  }).join('') + `<button class="link add-player">+ Add player</button>`
+}
+
+function sheetHTML(sh) {
+  const list = sh.vehicle === 'car' ? CARS : TRUCKS
+  const sign = sh.missed ? -1 : 1
+  return `<div class="sheet-backdrop" style="opacity:${sh.p}">
+   <div class="sheet ${sh.missed ? 'is-missed' : ''}" style="transform:translateY(${(1 - sh.p) * 105}%)">
+    <div class="sheet-handle"></div>
+    <div class="chips">${PLAYERS.map((p) => `<button class="chip ${p === sh.who ? 'on' : ''}">${p}</button>`).join('')}</div>
+    <div class="seg"><button class="${!sh.missed ? 'on' : ''}">✓ Called</button><button data-k="missed" class="${sh.missed ? 'on danger' : ''}">✗ Missed</button></div>
+    <div class="row"><div class="seg grow"><button class="${sh.vehicle === 'car' ? 'on' : ''}">Tesla</button><button data-k="truck" class="${sh.vehicle === 'truck' ? 'on' : ''}">Cybertruck</button></div>
+      <button class="toggle">⛽ ×2</button></div>
+    <div class="grid">${list.map(([c, call, pts]) => `<button class="color-btn" data-k="${call}"><span class="swatch ${sh.vehicle === 'truck' ? 'square' : ''}" style="background:${SWATCH[c]}"></span><span class="call">${call}</span><span class="pts">${fmt(sign * pts)}</span></button>`).join('')}</div>
+    <div class="row"><button class="big special" data-k="dealer">🏢 Dealership <b>${fmt(sign * 50)}</b></button></div>
+    <div class="row"><button class="big">✨ Custom</button><button class="big">± Adjust</button></div>
+   </div></div>`
+}
+
+function playHTML(st) {
+  return `<div class="screen">
+    <header class="bar"><button class="link">← Home</button><h2>Esla</h2><button class="link">🔊</button></header>
+    <div class="cards">${cardsHTML(st)}</div>
+    <div class="footer row"><button class="big">📜 Log (${st.events})</button><button class="big primary">🏁 End Game</button></div>
+    ${st.toast ? `<div class="toast ${st.toast.bad ? 'bad' : ''}" style="opacity:${st.toast.p};transform:translateY(${(1 - st.toast.p) * 40}px)"><span>${st.toast.text}</span><button class="link">Undo</button></div>` : ''}
+    ${st.sheet ? sheetHTML(st.sheet) : ''}
+  </div>`
+}
+
+function resultsHTML(st) {
+  const MEDAL = ['🥇', '🥈', '🥉']
+  const rows = ['Dad', 'Maya', 'Leo']
+  return `<div class="screen">
+    <header class="bar"><button class="link">← Home</button><h2>Final</h2><span></span></header>
+    <p class="muted center" style="margin:0">Oct 21, 2026, 4:12 PM</p>
+    <div class="winner"><div class="trophy">🏆</div><div class="name">Dad</div></div>
+    <div class="cards">${rows.map((p, i) => { const s = st.sc[p]; return `<div class="card static"><span class="rank">${MEDAL[i]}</span><span class="name">${p}</span><span class="whites"><span>⚪ ${s.wc}</span><span>⬜ ${s.wt}</span></span><span class="score">${s.s}</span></div>` }).join('')}</div>
+    <div class="footer row"><button class="big danger">Delete</button><button class="big">✏️ Edit scores</button></div>
+  </div>`
+}
+
+const screenEl = document.getElementById('screen')
+const phone = document.getElementById('phone')
+
+window.render = function (t) {
+  // Background: drifting lane dashes and a slow red glow.
+  const off = (t * 420) % 200
+  document.getElementById('lane1').style.transform = `translateY(${off}px)`
+  for (const id of ['lane1', 'lane2']) document.getElementById(id).style.opacity = lin(t, 3.9, 4.8)
+  document.getElementById('lane2').style.transform = `translateY(${off}px)`
+  const gx = 30 + 40 * eio(lin(t, 3.5, 5))
+  document.getElementById('glow').style.background = `radial-gradient(900px 700px at ${gx}% 55%, #e3193722, transparent 70%)`
+
+  // Hook
+  const words = document.querySelectorAll('.word')
+  HOOK.forEach((_, i) => {
+    const a = 0.25 + i * 0.5 - 0.12
+    const p = lin(t, a, a + 0.22)
+    const s = 1.6 - 0.6 * back(p)
+    words[i].style.opacity = p > 0 ? Math.min(1, p * 3) : 0
+    words[i].style.transform = `scale(${s})`
+  })
+  const hl = document.getElementById('hookline')
+  const hp = eo(lin(t, 2.15, 2.5))
+  hl.style.opacity = hp
+  hl.style.transform = `translateY(${(1 - hp) * 30}px)`
+  const hookOut = eio(lin(t, T.reveal - 0.3, T.reveal))
+  const hook = document.getElementById('hook')
+  hook.style.opacity = 1 - hookOut
+  hook.style.transform = `translateY(${-hookOut * 60}px)`
+
+  // Captions: lines stagger in, whole caption fades out before the next one.
+  CAPS.forEach((c, i) => {
+    const el = document.getElementById('cap' + i)
+    const outP = eio(lin(t, c.b - 0.3, c.b - 0.05))
+    el.style.opacity = t < c.a || t > c.b ? 0 : 1 - outP
+    el.style.transform = `translateY(calc(-50% - ${outP * 30}px))`
+    ;[...el.children].forEach((ch, j) => {
+      const p = eo(lin(t, c.a + 0.08 + j * 0.13, c.a + 0.45 + j * 0.13))
+      ch.style.opacity = p
+      ch.style.transform = `translateY(${(1 - p) * 34}px)`
+    })
+  })
+
+  // Phone slides in for the reveal.
+  const pp = eo(lin(t, T.reveal - 0.1, T.reveal + 0.55))
+  phone.style.opacity = pp > 0 ? 1 : 0
+  phone.style.transform = `translateX(${(1 - pp) * 900}px) rotate(${(1 - pp) * 8}deg)`
+
+  const st = stateAt(t)
+  const push = eio(lin(t, T.outro + 0.05, T.outro + 0.5))
+  let html = `<div id="island"></div><div id="status"><span>4:12</span><span>●●● 􀙇 ▮</span></div>`
+  if (push < 1) html += `<div class="page" style="transform:translateX(${-push * 100}%)">${playHTML(st)}</div>`
+  if (push > 0) html += `<div class="page" style="transform:translateX(${(1 - push) * 100}%)">${resultsHTML(st)}</div>`
+  html += `<div id="tap" style="display:none"></div>`
+  screenEl.innerHTML = html
+  document.querySelector('#status span:last-child').textContent = '5G  ▮▮▮'
+
+  if (st.tap) {
+    const target = screenEl.querySelector(st.tap.sel)
+    if (target) {
+      const r = target.getBoundingClientRect(), s = screenEl.getBoundingClientRect()
+      const tapEl = document.getElementById('tap')
+      const p = st.tap.p
+      // press in, then release with a ring
+      const scale = p < 0.65 ? 0.6 + 0.4 * eo(p / 0.65) : 1 + 0.5 * (p - 0.65) / 0.35
+      const op = p < 0.65 ? eo(p / 0.65) : 1 - (p - 0.65) / 0.35
+      tapEl.style.cssText = `display:block;left:${r.left - s.left + r.width / 2}px;top:${r.top - s.top + r.height / 2}px;transform:scale(${scale});opacity:${op}`
+      if (p > 0.45 && p < 0.75) target.style.transform = (target.style.transform || '') + ' scale(0.96)'
+    }
+  }
+}
+window.render(0)
+</script>
+</body>
+</html>
