@@ -91,10 +91,15 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
     }
   }, [live, view, firstTime])
 
-  // Accounts made before friend codes existed get one now.
+  // Accounts made before friend codes existed get one now. Only try once per
+  // session: a refused write rolls back, and retrying on every rollback loops.
   const needsCode = profile && !profile.friendCode
+  const codeTried = useRef(false)
+  const [codeError, setCodeError] = useState<string>()
   useEffect(() => {
-    if (needsCode) ensureFriendCode(uid).catch(console.error)
+    if (!needsCode || codeTried.current) return
+    codeTried.current = true
+    ensureFriendCode(uid).catch((e) => setCodeError((e as Error).message))
   }, [needsCode, uid])
 
   // The profile doc can lag right after sign-up.
@@ -136,7 +141,7 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
 
   if (view === 'rules') return <Rules onBack={() => go(back)} onTutorial={() => open('tutorial')} />
 
-  if (view === 'friends') return <Friends me={me} friends={friends} onBack={() => go('home')} />
+  if (view === 'friends') return <Friends me={me} friends={friends} codeError={codeError} onBack={() => go('home')} />
 
   if (view === 'setup')
     return (

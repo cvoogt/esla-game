@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { addFriendByCode, removeFriend, saveGuests, type Profile } from '../data'
 
-export function Friends({ me, friends, onBack }: { me: Profile; friends: Profile[]; onBack: () => void }) {
+interface Props {
+  me: Profile
+  friends: Profile[]
+  codeError?: string
+  onBack: () => void
+}
+
+export function Friends({ me, friends, codeError, onBack }: Props) {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string>()
@@ -40,6 +47,7 @@ export function Friends({ me, friends, onBack }: { me: Profile; friends: Profile
       <section className="code-box">
         <div className="muted small">Your friend code</div>
         <div className="code">{me.friendCode ?? '······'}</div>
+        {codeError && !me.friendCode && <p className="neg small">{codeError}</p>}
         <button className="link" onClick={share} disabled={!me.friendCode}>
           Share
         </button>

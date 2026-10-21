@@ -145,7 +145,7 @@ export const pairId = (a: string, b: string) => (a < b ? `${a}_${b}` : `${b}_${a
 
 /** Gives an account its friend code the first time it's needed. */
 export async function ensureFriendCode(uid: string) {
-  for (let tries = 0; tries < 5; tries++) {
+  for (let tries = 0; tries < 3; tries++) {
     const code = randomCode()
     const batch = writeBatch(db)
     batch.set(doc(friendCodes, code), { uid })
@@ -158,6 +158,8 @@ export async function ensureFriendCode(uid: string) {
       if ((e as { code?: string }).code !== 'permission-denied') throw e
     }
   }
+  // Three taken codes in a row is near impossible; the database rules are refusing it.
+  throw new Error("Couldn't create your friend code. The database rules may be out of date.")
 }
 
 export async function addFriendByCode(me: string, raw: string) {
