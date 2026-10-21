@@ -1,0 +1,29 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: Inter, sans-serif; }
+    .cap { position: absolute; left: 170px; top: 50%; width: 860px; transform: translateY(-50%); }
+    .cap .ln { opacity: 0; }
+    .cap .eyebrow { font: 800 30px/1 Inter, sans-serif; letter-spacing: 0.22em; color: #ff3b54; margin-bottom: 28px; }
+    .cap .l { font: 800 84px/1.06 Inter, sans-serif; letter-spacing: -0.03em; color: #f1f3f7; }
+    .cap .sub { font: 600 46px/1.25 Inter, sans-serif; color: #a3abbd; margin-top: 20px; }
+    .cap .pill { display: inline-block; margin-top: 34px; padding: 10px 30px; border-radius: 999px; font: 900 72px/1.1 Inter, sans-serif; }
+    .cap .logo { font: 800 170px/1 Inter, sans-serif; letter-spacing: 0.12em; color: #ff3b54; }
+    .cap .icon { width: 132px; height: 132px; margin-bottom: 34px; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 50px #0009; }
+    .cap .icon svg { width: 100%; height: 100%; display: block; }
+    .cap .url { margin-top: 40px; font: 600 34px/1 'JetBrains Mono', monospace; color: #a3abbd; }
+  </style>
+  <div id="root" data-composition-id="cap-reveal" data-width="1920" data-height="1080">
+    <div class="cap" id="cap-reveal-box">
+      <div class="ln" id="cap-reveal-l0"><div class="l"><span class="logo">ESLA</span></div></div>
+      <div class="ln" id="cap-reveal-l1"><div class="sub">The score counter for<br>spotting Teslas.</div></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    ["#cap-reveal-l0", "#cap-reveal-l1"].forEach((sel, i) => {
+      tl.fromTo(sel, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.08 + i * 0.13);
+    });
+    tl.fromTo("#cap-reveal-box", { opacity: 1, y: 0 }, { opacity: 0, y: -30, duration: 0.25, ease: "power2.in" }, 2.70);
+    window.__timelines["cap-reveal"] = tl;
+  </script>
+</template>

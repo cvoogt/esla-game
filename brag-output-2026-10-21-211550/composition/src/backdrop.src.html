@@ -1,0 +1,57 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #0b0d12;
+      overflow: hidden;
+    }
+    #bd-glow {
+      position: absolute;
+      inset: 0;
+    }
+    .bd-lane {
+      position: absolute;
+      top: -200px;
+      width: 10px;
+      height: 1500px;
+      opacity: 0;
+      background: repeating-linear-gradient(to bottom, #ffffff10 0 90px, transparent 90px 200px);
+    }
+  </style>
+  <div id="root" data-composition-id="backdrop" data-width="1920" data-height="1080">
+    <div id="bd-glow"></div>
+    <div class="bd-lane" id="bd-lane1" style="left: 1030px"></div>
+    <div class="bd-lane" id="bd-lane2" style="left: 1745px"></div>
+  </div>
+  <script>
+    // Per-frame low-band RMS of the music slice (30fps), normalized 0..1.
+    const RMS = /*RMS*/[];
+    const glow = document.getElementById("bd-glow");
+    const lanes = [document.getElementById("bd-lane1"), document.getElementById("bd-lane2")];
+    const clamp = (x) => Math.min(1, Math.max(0, x));
+    const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+    function renderAt(t) {
+      // Lane dashes drift like road markings once the app is on screen.
+      const off = (t * 420) % 200;
+      const laneOp = clamp((t - 3.9) / 0.9);
+      lanes.forEach((l) => {
+        l.style.transform = `translateY(${off}px)`;
+        l.style.opacity = laneOp;
+      });
+      // The red glow follows the phone and breathes with the music.
+      const f = Math.min(RMS.length - 1, Math.max(0, Math.round(t * 30)));
+      const level = RMS.length ? RMS[f] : 0;
+      const gx = 30 + 40 * eio(clamp((t - 3.5) / 1.5));
+      const a = Math.round(26 + 34 * level).toString(16).padStart(2, "0");
+      glow.style.background = `radial-gradient(${900 + 80 * level}px ${700 + 60 * level}px at ${gx}% 55%, #e31937${a}, transparent 70%)`;
+    }
+
+    const clock = { t: 0 };
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo(clock, { t: 0 }, { t: 21.5, duration: 21.5, ease: "none", onUpdate: () => renderAt(clock.t) }, 0);
+    renderAt(0);
+    window.__timelines["backdrop"] = tl;
+  </script>
+</template>

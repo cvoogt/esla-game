@@ -1,0 +1,78 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: Inter, sans-serif;
+    }
+    #hook-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #hook-words {
+      display: grid;
+      grid-template-columns: repeat(2, 760px);
+      gap: 22px 90px;
+    }
+    .hook-word {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      font: 900 132px/1 Inter, sans-serif;
+      letter-spacing: -0.03em;
+      opacity: 0;
+    }
+    .hook-word .sw {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: 5px solid #ffffff40;
+      flex: none;
+    }
+    .hook-word .sw.square {
+      border-radius: 12px;
+      transform: skewX(-12deg);
+    }
+    .hook-word .p {
+      font-size: 48px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+    #hook-line {
+      margin-top: 70px;
+      font: 700 64px/1.1 Inter, sans-serif;
+      color: #f1f3f7;
+      opacity: 0;
+    }
+    #hook-line b {
+      color: #ff3b54;
+    }
+  </style>
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="hook-wrap">
+      <div id="hook-words">
+        <div class="hook-word" id="hook-w1"><span class="sw" style="background: #f5f5f5"></span><span style="color: #f1f3f7">WESLA</span><span class="p">+2</span></div>
+        <div class="hook-word" id="hook-w2"><span class="sw" style="background: #dc2626"></span><span style="color: #ef4444">RESLA</span><span class="p">+1</span></div>
+        <div class="hook-word" id="hook-w3"><span class="sw square" style="background: #f5f5f5"></span><span style="color: #f1f3f7">WHUCK</span><span class="p">+3</span></div>
+        <div class="hook-word" id="hook-w4"><span class="sw square" style="background: #8b5cf6"></span><span style="color: #a78bfa">PURUCK</span><span class="p">+2</span></div>
+      </div>
+      <div id="hook-line">Spot a Tesla. <b>Call it out.</b></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // beat-grid: words land at 0.25, 0.75, 1.25, 1.75
+    ["#hook-w1", "#hook-w2", "#hook-w3", "#hook-w4"].forEach((sel, i) => {
+      const land = 0.25 + i * 0.5;
+      tl.fromTo(sel, { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(1.6)" }, land - 0.2);
+    });
+    tl.fromTo("#hook-line", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 2.15);
+    tl.fromTo("#hook-wrap", { opacity: 1, y: 0 }, { opacity: 0, y: -60, duration: 0.3, ease: "power2.inOut" }, 3.9);
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

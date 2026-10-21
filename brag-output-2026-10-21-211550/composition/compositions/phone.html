@@ -1,0 +1,757 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #phone-body {
+      position: absolute;
+      left: 1130px;
+      top: 84px;
+      width: 430px;
+      height: 912px;
+      border-radius: 66px;
+      background: #000;
+      padding: 14px;
+      opacity: 0;
+      box-shadow: 0 0 0 2px #2b3241, 0 50px 120px #000c, 0 0 160px #e3193722;
+    }
+    #phone-screen {
+      position: relative;
+      width: 402px;
+      height: 884px;
+      border-radius: 54px;
+      overflow: hidden;
+      font-family: Inter, sans-serif;
+    }
+    #phone-island {
+      position: absolute;
+      top: 12px;
+      left: 141px;
+      width: 120px;
+      height: 34px;
+      border-radius: 20px;
+      background: #000;
+      z-index: 50;
+    }
+    #phone-status {
+      position: absolute;
+      top: 18px;
+      left: 40px;
+      right: 34px;
+      display: flex;
+      justify-content: space-between;
+      font: 600 16px/1 Inter, sans-serif;
+      color: #f1f3f7;
+      z-index: 49;
+    }
+    #phone-app {
+      position: absolute;
+      inset: 0;
+    }
+    #phone-tap {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      margin: -32px 0 0 -32px;
+      border-radius: 50%;
+      background: #ffffff55;
+      border: 3px solid #ffffffcc;
+      z-index: 60;
+      display: none;
+    }
+
+    /* The Esla app's own stylesheet (src/styles.css), scoped to the phone screen. */
+#phone-screen {
+  --bg: #0b0d12;
+  --panel: #161a22;
+  --panel-2: #202632;
+  --line: #2b3241;
+  --text: #f1f3f7;
+  --muted: #8a93a6;
+  --accent: #e31937;
+  --good: #22c55e;
+  --bad: #ef4444;
+  --gold: #fbbf24;
+  --radius: 16px;
+  color-scheme: dark;
+}
+#phone-screen * {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+#phone-screen, #phone-screen {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#phone-screen button, #phone-screen input {
+  font: inherit;
+  color: inherit;
+}
+#phone-screen button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#phone-screen button:disabled {
+  opacity: 0.4;
+}
+#phone-screen input {
+  -webkit-user-select: text;
+  user-select: text;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+#phone-screen input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+#phone-screen .screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: max(12px, env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  max-width: 560px;
+  margin: 0 auto;
+}
+#phone-screen .bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+#phone-screen .bar > :first-child {
+  justify-self: start;
+}
+#phone-screen .bar > :last-child {
+  justify-self: end;
+}
+#phone-screen .bar h2 {
+  margin: 0;
+  font-size: 19px;
+}
+#phone-screen h3 {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+#phone-screen .hero {
+  text-align: center;
+  padding: 36px 0 16px;
+}
+#phone-screen .hero h1 {
+  margin: 0;
+  font-size: 64px;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: var(--accent);
+}
+#phone-screen .muted {
+  color: var(--muted);
+}
+#phone-screen .center {
+  text-align: center;
+}
+#phone-screen .small {
+  font-size: 13px;
+}
+#phone-screen .row {
+  display: flex;
+  gap: 10px;
+}
+#phone-screen .grow {
+  flex: 1;
+}
+#phone-screen .link {
+  color: var(--muted);
+  padding: 8px 4px;
+  font-size: 16px;
+}
+#phone-screen .link.danger, #phone-screen .neg {
+  color: var(--bad);
+}
+#phone-screen .pos {
+  color: var(--good);
+}
+#phone-screen .big {
+  flex: 1;
+  min-height: 56px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  font-weight: 600;
+}
+#phone-screen .big.primary {
+  background: var(--accent);
+}
+#phone-screen .big.danger {
+  background: #3a1a1f;
+  color: #ffb4b4;
+}
+#phone-screen .big.special {
+  background: linear-gradient(135deg, #3b2a05, #5a3e00);
+  color: var(--gold);
+}
+#phone-screen .screen > .big {
+  flex: none;
+}
+#phone-screen .big.narrow {
+  flex: 0 0 auto;
+}
+#phone-screen .footer {
+  margin-top: auto;
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+}
+#phone-screen .footer > .big {
+  box-shadow: 0 8px 24px #0008;
+}
+#phone-screen .footer:not(.row) > .big {
+  width: 100%;
+}
+#phone-screen .banner {
+  background: #3b2a05;
+  color: var(--gold);
+  text-align: center;
+  border-radius: 12px;
+  padding: 8px;
+  font-size: 14px;
+}
+#phone-screen .cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#phone-screen .card {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  grid-template-areas: 'rank name score' 'rank whites score';
+  align-items: center;
+  text-align: left;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-height: 84px;
+}
+#phone-screen .card:active {
+  transform: scale(0.98);
+}
+#phone-screen .card .rank {
+  grid-area: rank;
+  font-size: 20px;
+  color: var(--muted);
+  font-weight: 700;
+}
+#phone-screen .card .name {
+  grid-area: name;
+  font-size: 22px;
+  font-weight: 700;
+}
+#phone-screen .card .whites {
+  grid-area: whites;
+  display: flex;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+#phone-screen .card .score {
+  grid-area: score;
+  font-size: 44px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#phone-screen .flash-good {
+  animation: flash-good 0.7s ease-out;
+}
+#phone-screen .flash-bad {
+  animation: flash-bad 0.7s ease-out;
+}
+@keyframes flash-good{
+  from {
+    background: #14532d;
+    border-color: var(--good);
+  }
+}
+@keyframes flash-bad{
+  from {
+    background: #5a1a1a;
+    border-color: var(--bad);
+  }
+}
+#phone-screen .add-player {
+  align-self: center;
+}
+#phone-screen .winner {
+  text-align: center;
+  padding: 8px 0;
+}
+#phone-screen .winner .trophy {
+  font-size: 56px;
+}
+#phone-screen .winner .name {
+  font-size: 28px;
+  font-weight: 800;
+}
+#phone-screen .list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#phone-screen .list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+#phone-screen .list li.tap:active {
+  background: var(--panel-2);
+}
+#phone-screen .log-time {
+  color: var(--muted);
+  font-size: 13px;
+  min-width: 64px;
+}
+#phone-screen .table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 15px;
+}
+#phone-screen .table th, #phone-screen .table td {
+  padding: 10px 8px;
+  text-align: right;
+}
+#phone-screen .table th:first-child, #phone-screen .table td:first-child {
+  text-align: left;
+}
+#phone-screen .table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 13px;
+}
+#phone-screen .table tbody tr:first-child td {
+  color: var(--gold);
+  font-weight: 700;
+}
+#phone-screen .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#phone-screen .chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+#phone-screen .chip.on {
+  background: var(--text);
+  color: var(--bg);
+}
+#phone-screen .seg {
+  display: flex;
+  background: var(--panel-2);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+}
+#phone-screen .seg button {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+#phone-screen .seg button.on {
+  background: var(--text);
+  color: var(--bg);
+}
+#phone-screen .seg button.on.danger {
+  background: var(--bad);
+  color: white;
+}
+#phone-screen .toggle {
+  min-width: 84px;
+  border-radius: 14px;
+  background: var(--panel-2);
+  font-weight: 700;
+  color: var(--muted);
+}
+#phone-screen .toggle.on {
+  background: var(--gold);
+  color: #000;
+}
+#phone-screen .sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #000a;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+  animation: fade 0.15s;
+}
+#phone-screen .sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--panel);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slide 0.2s ease-out;
+  border-top: 3px solid transparent;
+}
+#phone-screen .sheet.is-missed {
+  border-top-color: var(--bad);
+}
+#phone-screen .sheet-handle {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  align-self: center;
+}
+#phone-screen .grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+#phone-screen .grid.four {
+  grid-template-columns: repeat(4, 1fr);
+}
+#phone-screen .color-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+#phone-screen .color-btn:active {
+  transform: scale(0.96);
+  background: var(--line);
+}
+#phone-screen .color-btn .swatch {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid #ffffff40;
+}
+#phone-screen .color-btn .swatch.square {
+  border-radius: 5px;
+  transform: skewX(-12deg);
+}
+#phone-screen .color-btn .call {
+  flex: 1;
+  font-weight: 700;
+  font-size: 17px;
+}
+#phone-screen .color-btn .pts {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--good);
+}
+#phone-screen .grid.four .color-btn {
+  justify-content: center;
+}
+#phone-screen .is-missed .color-btn .pts, #phone-screen .is-missed .big.special b {
+  color: var(--bad);
+}
+#phone-screen .color-btn .remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+}
+#phone-screen .num {
+  width: 84px;
+  text-align: center;
+}
+#phone-screen .toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  max-width: 528px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #14532d;
+  box-shadow: 0 8px 24px #000a;
+  animation: slide 0.2s ease-out;
+  z-index: 5;
+}
+#phone-screen .toast.bad {
+  background: #5a1a1a;
+}
+#phone-screen .toast .link {
+  color: white;
+  font-weight: 700;
+  text-decoration: underline;
+}
+@keyframes slide{
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+@keyframes fade{
+  from {
+    opacity: 0;
+  }
+}
+#phone-screen .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#phone-screen .table tbody tr.me td:first-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#phone-screen .code-box {
+  text-align: center;
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+#phone-screen .code-box .code {
+  font: 800 40px/1.2 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.15em;
+  -webkit-user-select: text;
+  user-select: text;
+}
+#phone-screen .code-input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+    /* Fit the app's full-viewport layout into the phone frame; motion is driven per frame. */
+    #phone-screen * { animation: none !important; }
+    #phone-screen { font: 17px/1.35 Inter, sans-serif; }
+    #phone-screen .page { position: absolute; inset: 0; }
+    #phone-screen .screen { min-height: 0; height: 884px; padding-top: 58px; padding-bottom: 28px; position: relative; }
+    #phone-screen .footer { position: absolute; left: 16px; right: 16px; bottom: 28px; }
+    #phone-screen .sheet-backdrop, #phone-screen .toast { position: absolute; }
+    #phone-screen .toast { bottom: 104px; }
+    #phone-screen .sheet { padding-bottom: 30px; }
+    #phone-screen .cards { position: relative; }
+    #phone-screen .card { position: relative; }
+    /* White on the app's #e31937 measures 4.24:1; a shade deeper clears AA. */
+    #phone-screen .big.primary { background: #c8102e; }
+  </style>
+  <div id="root" data-composition-id="phone" data-width="1920" data-height="1080">
+    <div id="phone-body">
+      <div id="phone-screen">
+        <div id="phone-island"></div>
+        <div id="phone-status" data-layout-ignore><span>4:12</span><span>5G ▮▮▮</span></div>
+        <div id="phone-app"></div>
+        <div id="phone-tap"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Data from the app's src/rules.ts.
+    const SWATCH = { white: "#f5f5f5", grey: "#7d828a", black: "#151515", blue: "#2563eb", silver: "#c0c4c9", red: "#dc2626", pink: "#f472b6", purple: "#8b5cf6" };
+    const CARS = [["white", "Wesla", 2], ["grey", "Gresla", 1], ["black", "Blesla", 1], ["blue", "Blusla", 1], ["silver", "Sesla", 1], ["red", "Resla", 1], ["pink", "Pesla", 1], ["purple", "Puresla", 1]];
+    const TRUCKS = [["white", "Whuck", 3], ["grey", "Gruck", 2], ["black", "Bluck", 2], ["blue", "Blueck", 2], ["silver", "Suck", 2], ["red", "Ruck", 2], ["pink", "Puck", 2], ["purple", "Puruck", 2]];
+
+    // Film times (seconds from the start of the video). This scene starts at 4.0.
+    const SCENE_START = 4.0;
+    const T = { reveal: 4.25, outro: 17.25 };
+    const PLAYERS = ["Maya", "Dad", "Leo"];
+    const BASE = { Maya: { s: 24, wc: 4, wt: 1 }, Dad: { s: 21, wc: 3, wt: 0 }, Leo: { s: 19, wc: 2, wt: 1 } };
+    const DEMO = [
+      { who: "Maya", open: 7.75, taps: [{ t: 8.55, sel: '[data-k="truck"]', set: { vehicle: "truck" } }], score: { t: 9.35, sel: '[data-k="Whuck"]', pts: 3, label: "Whuck", wt: 1 } },
+      { who: "Leo", open: 11.6, taps: [{ t: 12.2, sel: '[data-k="missed"]', set: { missed: true } }, { t: 12.65, sel: '[data-k="truck"]', set: { vehicle: "truck" } }], score: { t: 13.2, sel: '[data-k="Whuck"]', pts: -3, label: "Missed Whuck" } },
+      // beat-locked: points land at 15.75s
+      { who: "Dad", open: 14.75, taps: [], score: { t: 15.6, sel: '[data-k="dealer"]', pts: 50, label: "Dealership" } },
+    ];
+
+    const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+    const lin = (t, a, b) => clamp((t - a) / (b - a));
+    const eo = (x) => 1 - Math.pow(1 - x, 3);
+    const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+    const fmt = (p) => (p > 0 ? `+${p}` : p < 0 ? `−${-p}` : "0");
+
+    function stateAt(t) {
+      const sc = JSON.parse(JSON.stringify(BASE));
+      let sheet = null, toast = null, tap = null, events = 37, rankP = 0;
+      const flash = {};
+      for (const d of DEMO) {
+        if (t >= d.open - 0.25 && t < d.open + 0.12) tap = { sel: `[data-card="${d.who}"]`, p: lin(t, d.open - 0.25, d.open + 0.12) };
+        if (t >= d.open && t < d.score.t + 0.3) {
+          const st = { who: d.who, vehicle: "car", missed: false, p: eo(lin(t, d.open, d.open + 0.32)) };
+          for (const k of d.taps) {
+            if (t >= k.t - 0.25 && t < k.t + 0.12) tap = { sel: k.sel, p: lin(t, k.t - 0.25, k.t + 0.12) };
+            if (t >= k.t) Object.assign(st, k.set);
+          }
+          if (t >= d.score.t - 0.25 && t < d.score.t + 0.12) tap = { sel: d.score.sel, p: lin(t, d.score.t - 0.25, d.score.t + 0.12) };
+          if (t >= d.score.t) st.p = 1 - eio(lin(t, d.score.t + 0.05, d.score.t + 0.3));
+          sheet = st;
+        }
+        if (t >= d.score.t + 0.12) {
+          const k = eo(lin(t, d.score.t + 0.15, d.score.t + 0.65));
+          const from = sc[d.who].s;
+          sc[d.who].s += d.score.pts;
+          sc[d.who].shown = Math.round(from + d.score.pts * k);
+          if (d.score.wt) sc[d.who].wt += d.score.wt;
+          events++;
+          flash[d.who] = { good: d.score.pts > 0, p: lin(t, d.score.t + 0.15, d.score.t + 0.9) };
+          toast = { text: `${d.who}: ${d.score.label} ${fmt(d.score.pts)}`, bad: d.score.pts < 0, p: eo(lin(t, d.score.t + 0.15, d.score.t + 0.4)) };
+          if (d.who === "Dad") rankP = eio(lin(t, d.score.t + 0.45, d.score.t + 0.95));
+        }
+      }
+      for (const p of PLAYERS) if (sc[p].shown === undefined) sc[p].shown = sc[p].s;
+      return { sc, sheet, toast, flash, tap, events, rankP };
+    }
+
+    function cardsHTML(st) {
+      // DOM order stays fixed; the rank swap animates with transforms.
+      const order0 = ["Maya", "Dad", "Leo"], order1 = ["Dad", "Maya", "Leo"];
+      // Positions for the swap are applied after layout in renderAt.
+      return PLAYERS.map((p) => {
+        const i0 = order0.indexOf(p), i1 = order1.indexOf(p);
+        const rank = (st.rankP > 0.5 ? i1 : i0) + 1;
+        const f = st.flash[p];
+        let extra = p === "Dad" && st.rankP > 0 && st.rankP < 1 ? "z-index:2;" : "";
+        if (f && f.p < 1) {
+          const a = (1 - eo(f.p)) * 100;
+          extra += `background: color-mix(in srgb, ${f.good ? "#14532d" : "#5a1a1a"} ${a}%, var(--panel));`;
+          extra += `border-color: color-mix(in srgb, ${f.good ? "var(--good)" : "var(--bad)"} ${a}%, var(--line));`;
+        }
+        const s = st.sc[p];
+        return `<button class="card" data-layout-allow-overlap data-card="${p}" style="${extra}">
+          <span class="rank">${rank}</span><span class="name">${p}</span>
+          <span class="whites"><span>⚪ ${s.wc}</span><span>⬜ ${s.wt}</span></span>
+          <span class="score">${s.shown}</span></button>`;
+      }).join("") + `<button class="link add-player">+ Add player</button>`;
+    }
+
+    function sheetHTML(sh) {
+      const list = sh.vehicle === "car" ? CARS : TRUCKS;
+      const sign = sh.missed ? -1 : 1;
+      return `<div class="sheet-backdrop" data-layout-allow-occlusion data-layout-allow-overlap style="opacity:${sh.p}">
+        <div data-layout-allow-occlusion data-layout-allow-overlap class="sheet ${sh.missed ? "is-missed" : ""}" style="transform:translateY(${(1 - sh.p) * 105}%)">
+          <div class="sheet-handle"></div>
+          <div class="chips">${PLAYERS.map((p) => `<button class="chip ${p === sh.who ? "on" : ""}">${p}</button>`).join("")}</div>
+          <div class="seg"><button class="${!sh.missed ? "on" : ""}">✓ Called</button><button data-k="missed" class="${sh.missed ? "on danger" : ""}">✗ Missed</button></div>
+          <div class="row"><div class="seg grow"><button class="${sh.vehicle === "car" ? "on" : ""}">Tesla</button><button data-k="truck" class="${sh.vehicle === "truck" ? "on" : ""}">Cybertruck</button></div>
+            <button class="toggle">⛽ ×2</button></div>
+          <div class="grid">${list.map(([c, call, pts]) => `<button class="color-btn" data-k="${call}"><span class="swatch ${sh.vehicle === "truck" ? "square" : ""}" style="background:${SWATCH[c]}"></span><span class="call">${call}</span><span class="pts">${fmt(sign * pts)}</span></button>`).join("")}</div>
+          <div class="row"><button class="big special" data-k="dealer">🏢 Dealership <b>${fmt(sign * 50)}</b></button></div>
+          <div class="row"><button class="big">✨ Custom</button><button class="big">± Adjust</button></div>
+        </div></div>`;
+    }
+
+    function playHTML(st) {
+      return `<div class="screen">
+        <header class="bar" data-layout-allow-overlap><button class="link">← Home</button><h2>Esla</h2><button class="link">🔊</button></header>
+        <div class="cards">${cardsHTML(st)}</div>
+        <div class="footer row" data-layout-allow-overlap><button class="big" data-layout-allow-overlap>📜 Log (${st.events})</button><button class="big primary" data-layout-allow-overlap>🏁 End Game</button></div>
+        ${st.toast ? `<div data-layout-allow-overlap class="toast ${st.toast.bad ? "bad" : ""}" style="opacity:${st.toast.p};transform:translateY(${(1 - st.toast.p) * 40}px)"><span>${st.toast.text}</span><button class="link">Undo</button></div>` : ""}
+        ${st.sheet ? sheetHTML(st.sheet) : ""}
+      </div>`;
+    }
+
+    function resultsHTML(st) {
+      const MEDAL = ["🥇", "🥈", "🥉"];
+      return `<div class="screen">
+        <header class="bar"><button class="link">← Home</button><h2>Final</h2><span></span></header>
+        <p class="muted center" style="margin:0">Oct 21, 2026, 4:12 PM</p>
+        <div class="winner"><div class="trophy">🏆</div><div class="name">Dad</div></div>
+        <div class="cards">${["Dad", "Maya", "Leo"].map((p, i) => { const s = st.sc[p]; return `<div class="card static"><span class="rank">${MEDAL[i]}</span><span class="name">${p}</span><span class="whites"><span>⚪ ${s.wc}</span><span>⬜ ${s.wt}</span></span><span class="score">${s.s}</span></div>`; }).join("")}</div>
+        <div class="footer row"><button class="big danger">Delete</button><button class="big">✏️ Edit scores</button></div>
+      </div>`;
+    }
+
+    const body = document.getElementById("phone-body");
+    const screen = document.getElementById("phone-screen");
+    const app = document.getElementById("phone-app");
+    const tapEl = document.getElementById("phone-tap");
+
+    function renderAt(t) {
+      const pp = eo(lin(t, T.reveal - 0.25, T.reveal + 0.4));
+      body.style.opacity = pp > 0 ? 1 : 0;
+      body.style.transform = `translateX(${(1 - pp) * 900}px) rotate(${(1 - pp) * 8}deg)`;
+
+      const st = stateAt(t);
+      const push = eio(lin(t, T.outro + 0.05, T.outro + 0.5));
+      let html = "";
+      if (push < 1) html += `<div class="page" style="transform:translateX(${-push * 100}%)">${playHTML(st)}</div>`;
+      if (push > 0) html += `<div class="page" style="transform:translateX(${(1 - push) * 100}%)">${resultsHTML(st)}</div>`;
+      app.innerHTML = html;
+      // The app's bottom sheet slides over the scoreboard by design.
+      app.querySelectorAll(".bar, .bar *, .cards, .cards *, .footer, .footer *").forEach((el) => el.setAttribute("data-layout-allow-occlusion", ""));
+      // Dad overtakes Maya: swap the two cards using their laid-out boxes.
+      if (st.rankP > 0 && push < 1) {
+        const maya = app.querySelector('[data-card="Maya"]'), dad = app.querySelector('[data-card="Dad"]');
+        const dDad = (maya.offsetTop - dad.offsetTop) * st.rankP;
+        const dMaya = (dad.offsetTop + dad.offsetHeight - maya.offsetHeight - maya.offsetTop) * st.rankP;
+        dad.style.transform = `translateY(${dDad}px)`;
+        maya.style.transform = `translateY(${dMaya}px)`;
+      }
+
+      tapEl.style.display = "none";
+      if (st.tap) {
+        const target = app.querySelector(st.tap.sel);
+        if (target) {
+          // Measured in the phone's unscaled layout space.
+          let x = target.offsetWidth / 2, y = target.offsetHeight / 2, n = target;
+          while (n && n !== screen) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+          const p = st.tap.p;
+          const scale = p < 0.65 ? 0.6 + 0.4 * eo(p / 0.65) : 1 + (0.5 * (p - 0.65)) / 0.35;
+          const op = p < 0.65 ? eo(p / 0.65) : 1 - (p - 0.65) / 0.35;
+          tapEl.style.cssText = `display:block;left:${x}px;top:${y}px;transform:scale(${scale});opacity:${op}`;
+          if (p > 0.45 && p < 0.75) target.style.transform = (target.style.transform || "") + " scale(0.96)";
+        }
+      }
+    }
+
+    const clock = { t: 0 };
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo(clock, { t: 0 }, { t: 17.5, duration: 17.5, ease: "none", onUpdate: () => renderAt(clock.t + SCENE_START) }, 0);
+    renderAt(SCENE_START);
+    window.__timelines["phone"] = tl;
+  </script>
+</template>
