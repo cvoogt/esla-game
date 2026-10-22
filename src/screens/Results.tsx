@@ -1,4 +1,5 @@
-import { standings, type Game } from '../scoring'
+import { TallyTable } from '../components/TallyTable'
+import { standings, tally, type Game } from '../scoring'
 import { deleteGame } from '../data'
 
 const MEDAL = ['🥇', '🥈', '🥉']
@@ -39,6 +40,15 @@ export function Results({ game, onHome, onEdit }: { game: Game; onHome: () => vo
           </div>
         ))}
       </div>
+
+      <h3>Who called what</h3>
+      <TallyTable
+        columns={rows.map((r) => ({
+          key: r.player.id,
+          name: r.player.name,
+          tally: tally(game.events.filter((e) => e.playerId === r.player.id)),
+        }))}
+      />
 
       <div className="footer row">
         <button

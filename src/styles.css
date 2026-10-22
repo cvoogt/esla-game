@@ -724,3 +724,84 @@ h3 {
 .tutorial .footer {
   margin-top: 0;
 }
+
+.tiles {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tiles button {
+  font-size: 13px;
+  padding: 12px 4px;
+}
+
+.table tr.tap:active td {
+  background: var(--panel-2);
+}
+
+.tally td,
+.tally th {
+  font-variant-numeric: tabular-nums;
+}
+
+.tally td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.tally td.zero {
+  color: var(--line);
+}
+
+.tally td.lead {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.tally tr.extra td {
+  color: var(--muted);
+}
+
+.tally tr.extra td.lead {
+  color: var(--gold);
+}
+
+.tally tbody tr:first-child td {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.tally tbody tr:first-child td.lead {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.tally tbody tr:first-child td.zero {
+  color: var(--line);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.stat .value {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .label {
+  font-size: 12px;
+  color: var(--muted);
+}

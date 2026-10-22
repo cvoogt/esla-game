@@ -13,12 +13,13 @@ interface Props {
   onFriends: () => void
   onRules: () => void
   onTutorial: () => void
+  onPlayer: (key: string) => void
   onNew: () => void
   onOpen: (id: string) => void
   onResults: (id: string) => void
 }
 
-export function Home({ me, board, myGames, onFriends, onRules, onTutorial, onNew, onOpen, onResults }: Props) {
+export function Home({ me, board, myGames, onFriends, onRules, onTutorial, onPlayer, onNew, onOpen, onResults }: Props) {
   const live = myGames.find((g) => g.status === 'live')
   const past = myGames.filter((g) => g.status === 'ended')
 
@@ -64,11 +65,15 @@ export function Home({ me, board, myGames, onFriends, onRules, onTutorial, onNew
         <button onClick={onFriends}>
           <span>👥</span>Friends
         </button>
+        <button onClick={() => onPlayer(me.uid)}>
+          <span>📊</span>My stats
+        </button>
       </div>
 
       {board.some((r) => r.games > 0) && (
         <section>
           <h3>Leaderboard</h3>
+          <p className="muted small">Tap a player for their lifetime stats.</p>
           <table className="table">
             <thead>
               <tr>
@@ -82,7 +87,7 @@ export function Home({ me, board, myGames, onFriends, onRules, onTutorial, onNew
             </thead>
             <tbody>
               {board.map((s) => (
-                <tr key={s.key} className={s.kind === 'me' ? 'me' : ''}>
+                <tr key={s.key} className={`tap ${s.kind === 'me' ? 'me' : ''}`} onClick={() => onPlayer(s.key)}>
                   <td>
                     {s.name}
                     {s.kind === 'guest' && <span className="muted small"> guest</span>}

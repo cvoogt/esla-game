@@ -109,4 +109,6 @@ A player ends the game when they choose (usually when you reach your destination
   account (with their own stats) for future games.
 - [x] Tutorial (offered once per account, replayable from the home screen) and a Rules page
   (reachable from home and mid-game; point tables generated from the scoring rules)
+- [x] End-of-game "Who called what" table and per-player lifetime stats (tap anyone on the
+  leaderboard, or My stats): records, favorite call, and a 16-call collection
 - [x] Live on GitHub Pages: https://cvoogt.github.io/esla-game/

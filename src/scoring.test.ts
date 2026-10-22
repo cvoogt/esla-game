@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lifetimeStats, results, standings, type Game, type ScoreEvent } from './scoring'
+import { lifetimeStats, results, standings, tally, type Game, type ScoreEvent } from './scoring'
 
 let n = 0
 function ev(playerId: string, points: number, extra: Partial<ScoreEvent> = {}): ScoreEvent {
@@ -68,5 +68,33 @@ describe('lifetimeStats', () => {
   it('keeps saved guests apart even with the same name', () => {
     const g = results(game([ev('a', 2), ev('b', 4)])).map((r) => ({ ...r, name: 'Kid', guestId: r.playerId }))
     expect(lifetimeStats([g]).map((s) => s.key)).toEqual(['guest:b', 'guest:a'])
+  })
+})
+
+describe('tally', () => {
+  it('counts calls by name, gas doubles, customs, misses and specials', () => {
+    const t = tally([
+      ev('a', 2, { color: 'white', vehicle: 'car', label: 'Wesla' }),
+      ev('a', 6, { color: 'white', vehicle: 'truck', label: 'Whuck ⛽', multiplier: 2 }),
+      ev('a', 2, { color: 'white', vehicle: 'car', label: 'Wesla' }),
+      ev('a', 3, { label: 'Green wrap ⛽', multiplier: 2 }),
+      ev('a', -2, { kind: 'missed', color: 'grey', vehicle: 'truck', label: 'Missed Gruck' }),
+      ev('a', 50, { kind: 'dealership', label: 'Dealership' }),
+      ev('a', -5, { kind: 'adjust', label: 'Adjustment' }),
+    ])
+    expect(t).toEqual({
+      calls: { Wesla: 2, Whuck: 1, 'Green wrap': 1 },
+      gas: 2,
+      dealerships: 1,
+      customs: 1,
+      missed: 1,
+      missedPoints: 2,
+      adjust: -5,
+    })
+  })
+
+  it('adds up across games in lifetime stats', () => {
+    const g = () => results(game([ev('a', 2, { color: 'white', vehicle: 'car' })]))
+    expect(lifetimeStats([g(), g()]).find((s) => s.name === 'Ann')!.tally.calls).toEqual({ Wesla: 2 })
   })
 })

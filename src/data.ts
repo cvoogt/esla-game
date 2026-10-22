@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { auth, db } from './firebase'
-import { results, type Game, type Player, type Result, type ScoreEvent } from './scoring'
+import { results, type Game, type Player, type Result, type ScoreEvent, type Tally } from './scoring'
 
 export interface CustomSighting {
   id: string
@@ -43,6 +43,7 @@ export interface Stats {
   whiteCars: number
   whiteTrucks: number
   best: number | null
+  tally?: Tally
 }
 
 export interface Profile {
@@ -335,6 +336,12 @@ export function endGame(game: Game) {
 /** Keeps the saved leaderboard summary in step when a finished game is edited. */
 export function syncResults(game: Game) {
   bg(updateDoc(doc(games, game.id), { results: results(game) }))
+}
+
+/** Games finished before call counts existed get them from their event log. */
+export async function backfillResults(game: GameDoc) {
+  const snap = await getDocs(eventsOf(game.id))
+  syncResults({ ...game, events: snap.docs.map((d) => ({ ...(d.data() as ScoreEvent), id: d.id })) })
 }
 
 export function deleteGame(game: Game) {

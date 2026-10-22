@@ -1,4 +1,4 @@
-import type { ColorKey, Vehicle } from './rules'
+import { sightingFor, type ColorKey, type Vehicle } from './rules'
 
 export interface Player {
   id: string
@@ -93,6 +93,54 @@ export interface Result {
   whiteCars: number
   whiteTrucks: number
   rank: number
+  tally?: Tally
+}
+
+/** What a player called, counted. Calls are keyed by call name (Wesla, Whuck, or a custom label). */
+export interface Tally {
+  calls: Record<string, number>
+  gas: number
+  dealerships: number
+  customs: number
+  missed: number
+  missedPoints: number
+  adjust: number
+}
+
+export const emptyTally = (): Tally => ({ calls: {}, gas: 0, dealerships: 0, customs: 0, missed: 0, missedPoints: 0, adjust: 0 })
+
+const stripGas = (label: string) => label.replace(/\s*⛽\s*$/, '').trim()
+
+export function tally(events: ScoreEvent[]): Tally {
+  const t = emptyTally()
+  for (const e of events) {
+    if (e.kind === 'sighting') {
+      const known = e.vehicle && e.color ? sightingFor(e.vehicle, e.color) : undefined
+      const name = known?.call ?? stripGas(e.label)
+      if (!known) t.customs++
+      t.calls[name] = (t.calls[name] ?? 0) + 1
+      if (e.multiplier > 1) t.gas++
+    } else if (e.kind === 'dealership') t.dealerships++
+    else if (e.kind === 'missed') {
+      t.missed++
+      t.missedPoints -= e.points
+    } else if (e.kind === 'adjust') t.adjust += e.points
+  }
+  return t
+}
+
+export function addTally(a: Tally, b: Tally): Tally {
+  const calls = { ...a.calls }
+  for (const [k, v] of Object.entries(b.calls)) calls[k] = (calls[k] ?? 0) + v
+  return {
+    calls,
+    gas: a.gas + b.gas,
+    dealerships: a.dealerships + b.dealerships,
+    customs: a.customs + b.customs,
+    missed: a.missed + b.missed,
+    missedPoints: a.missedPoints + b.missedPoints,
+    adjust: a.adjust + b.adjust,
+  }
 }
 
 export function results(game: Game): Result[] {
@@ -105,6 +153,7 @@ export function results(game: Game): Result[] {
     whiteCars: s.whiteCars,
     whiteTrucks: s.whiteTrucks,
     rank: s.rank,
+    tally: tally(game.events.filter((e) => e.playerId === s.player.id)),
   }))
 }
 
@@ -118,6 +167,7 @@ export interface LifetimeStats {
   whiteCars: number
   whiteTrucks: number
   best: number
+  tally: Tally
 }
 
 export function statKey(r: { uid?: string | null; guestId?: string | null; name: string }) {
@@ -140,6 +190,7 @@ export function lifetimeStats(games: Result[][], names: Record<string, string> =
         whiteCars: 0,
         whiteTrucks: 0,
         best: -Infinity,
+        tally: emptyTally(),
       }
       st.games++
       if (r.rank === 1) st.wins++
@@ -147,6 +198,7 @@ export function lifetimeStats(games: Result[][], names: Record<string, string> =
       st.whiteCars += r.whiteCars
       st.whiteTrucks += r.whiteTrucks
       st.best = Math.max(st.best, r.score)
+      if (r.tally) st.tally = addTally(st.tally, r.tally)
       byKey.set(key, st)
     }
   }

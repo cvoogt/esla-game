@@ -44,3 +44,9 @@ export const TRUCKS: Sighting[] = [
 
 export const DEALERSHIP_POINTS = 50
 export const GAS_STATION_MULTIPLIER = 2
+
+export const ALL_SIGHTINGS = [...CARS, ...TRUCKS]
+
+export function sightingFor(vehicle: Vehicle, color: ColorKey) {
+  return ALL_SIGHTINGS.find((s) => s.vehicle === vehicle && s.color === color)
+}

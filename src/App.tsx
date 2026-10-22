@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  backfillResults,
   createGame,
   ensureFriendCode,
   markTutorialSeen,
@@ -13,11 +14,12 @@ import {
   type Profile,
   type Stats,
 } from './data'
-import { lifetimeStats, type LifetimeStats } from './scoring'
+import { emptyTally, lifetimeStats, type LifetimeStats } from './scoring'
 import { Friends } from './screens/Friends'
 import { Home, type BoardRow } from './screens/Home'
 import { Log } from './screens/Log'
 import { Play } from './screens/Play'
+import { PlayerStats } from './screens/PlayerStats'
 import { Results } from './screens/Results'
 import { Rules } from './screens/Rules'
 import { Setup } from './screens/Setup'
@@ -41,14 +43,14 @@ function Splash() {
   )
 }
 
-type View = 'home' | 'setup' | 'play' | 'log' | 'results' | 'friends' | 'rules' | 'tutorial'
+type View = 'home' | 'setup' | 'play' | 'log' | 'results' | 'friends' | 'rules' | 'tutorial' | 'player'
 
-const EMPTY: Stats = { games: 0, wins: 0, points: 0, whiteCars: 0, whiteTrucks: 0, best: null }
+const EMPTY: Stats = { games: 0, wins: 0, points: 0, whiteCars: 0, whiteTrucks: 0, best: null, tally: emptyTally() }
 
 function toStats(s: LifetimeStats | undefined): Stats {
   if (!s) return EMPTY
-  const { games, wins, points, whiteCars, whiteTrucks, best } = s
-  return { games, wins, points, whiteCars, whiteTrucks, best }
+  const { games, wins, points, whiteCars, whiteTrucks, best, tally } = s
+  return { games, wins, points, whiteCars, whiteTrucks, best, tally }
 }
 
 /** Me (from my own games), my saved guests, and my friends (from their saved stats). */
@@ -71,6 +73,7 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
   const [view, setView] = useState<View>('home')
   // Rules and the tutorial can be opened from several screens; remember where to go back to.
   const [back, setBack] = useState<View>('home')
+  const [playerKey, setPlayerKey] = useState<string>()
   const [gameId, setGameId] = useState<string>()
   const game = useGame(gameId)
 
@@ -106,6 +109,17 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
   const me: Profile = profile ?? { uid, name: fallbackName, customs: [], guests: [] }
   const { mine, board } = leaderboard(me, friends, myGames ?? [])
 
+  // Fill in call counts for games finished before they were tracked (once per session).
+  const backfilled = useRef(new Set<string>())
+  useEffect(() => {
+    myGames
+      ?.filter((g) => g.status === 'ended' && g.results?.some((r) => !r.tally) && !backfilled.current.has(g.id))
+      .forEach((g) => {
+        backfilled.current.add(g.id)
+        backfillResults(g).catch(console.error)
+      })
+  }, [myGames])
+
   // Publish my lifetime stats so friends' leaderboards can show them.
   const minesJson = JSON.stringify(mine)
   useEffect(() => {
@@ -139,6 +153,10 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
       />
     )
 
+  const selected = board.find((r) => r.key === playerKey)
+  if (view === 'player' && selected)
+    return <PlayerStats name={selected.name} kind={selected.kind} stats={selected} onBack={() => go('home')} />
+
   if (view === 'rules') return <Rules onBack={() => go(back)} onTutorial={() => open('tutorial')} />
 
   if (view === 'friends') return <Friends me={me} friends={friends} codeError={codeError} onBack={() => go('home')} />
@@ -162,6 +180,10 @@ function SignedIn({ uid, fallbackName }: { uid: string; fallbackName: string }) 
         onFriends={() => go('friends')}
         onRules={() => open('rules')}
         onTutorial={() => open('tutorial')}
+        onPlayer={(key) => {
+          setPlayerKey(key)
+          go('player')
+        }}
         onNew={() => go('setup')}
         onOpen={(id) => go('play', id)}
         onResults={(id) => go('results', id)}
